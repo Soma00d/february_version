@@ -90,6 +90,7 @@ $(document).ready(function () {
     var resetMasterTSSC;
     var startSlaveTSSC;
     var startSlaveSBSH;
+    var startSlaveSBSH2;
 
 
     //Definition des variables globales pour le test final    
@@ -1771,19 +1772,23 @@ $(document).ready(function () {
             resetMasterTSSC = "002400806d68d7551407f09b861e3aad000549a8440800001FC20F000E00000000000000";
             startSlaveTSSC = "002400806d68d7551407f09b861e3aad000549a844010000028226404000000000000000";
             startSlaveSBSH = "002400806d68d7551407f09b861e3aad000549a844010000028426401000000000000000";
+            startSlaveSBSH2 = "002400806d68d7551407f09b861e3aad000549a844010000028426400c00000000000000";
             console.log(modelName);
 
             switch (modelName) {
                 case "TSSC" :
                     sendSignalPic("B");
+                    sendSignal(startSlaveTSSC);
                     break;
                 case "SMARTBOX" :
                     sendSignalPic("C");
                     sendSignal(startSlaveSBSH);
+                    sendSignal(startSlaveSBSH2);
                     break;
                 case "SMARTHANDLE" :
                     sendSignalPic("C");
                     sendSignal(startSlaveSBSH);
+                    sendSignal(startSlaveSBSH2);
                     break;
                 default:
                     break;
@@ -1795,7 +1800,6 @@ $(document).ready(function () {
     }
 
 
-
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// SPY BOX        ///////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -1804,10 +1808,18 @@ $(document).ready(function () {
         var d = spyBox.get(0);
         d.scrollTop = d.scrollHeight;
         if (lastSpyMsg !== canData) {
-            spyBox.append("<div class='line_spy'><span class='can_id_spy' data-id='" + canId + "'>" + canId + "</span> <span class='can_data_spy'>" + canData + "</span> <span class='nb'>1</span><span class='ts'>" + new Date().getTime() + "</span></div>");
+            var today = new Date();
+            var minutes = today.getMinutes();
+            var seconds = today.getSeconds();
+            var milliseconds = today.getMilliseconds();if(String(milliseconds).length <3){milliseconds="0"+milliseconds};
+            spyBox.append("<div class='line_spy'><span class='can_id_spy' data-id='" + canId + "'>" + canId + "</span> <span class='can_data_spy'>" + canData + "</span> <span class='nb'>1</span><span class='ts'>" + minutes+"m "+seconds+","+milliseconds+"s" + "</span></div>");
         } else {
             if ($('#dialog-spybox .content_line').is(':empty')) {
-                spyBox.append("<div class='line_spy'><span class='can_id_spy' data-id='" + canId + "'>" + canId + "</span> <span class='can_data_spy'>" + canData + "</span> <span class='nb'>1</span><span class='ts'>" + new Date().getTime() + "</span></div>");
+                var today = new Date();
+                var minutes = today.getMinutes();
+                var seconds = today.getSeconds();
+                var milliseconds = today.getMilliseconds();if(String(milliseconds).length <3){milliseconds="0"+milliseconds};
+                spyBox.append("<div class='line_spy'><span class='can_id_spy' data-id='" + canId + "'>" + canId + "</span> <span class='can_data_spy'>" + canData + "</span> <span class='nb'>1</span><span class='ts'>" + minutes+"m "+seconds+","+milliseconds+"s"+ "</span></div>");
             } else {
                 var nb = $("#dialog-spybox .content_line .line_spy:last-child .nb").html();
                 nb = parseInt(nb);
@@ -2686,6 +2698,33 @@ $(document).ready(function () {
             $(".eprom_protect").addClass("protected");
         }
     });
+    
+    $(".get_switch").on('click', function () {
+        _MODE = "CALIBRATION";
+        var pingSignal = Cal_post+"040000"+cobID2+"40006001";
+        sendSignal(pingSignal);
+        waitPingResponse = cobID1;
+        var switch_position;
+        setTimeout(function () {
+             var response = finalResponseData.substring(8,10);
+             switch(response){
+                 case "00":
+                     switch_position = "1";
+                     break;
+                 case "08":
+                     switch_position = "2";
+                     break;
+                 case "10":
+                     switch_position = "3";
+                     break;
+                 case "18":
+                     switch_position = "4";
+                     break;
+             }
+             $(".position_result span").html(switch_position);
+        }, 200);
+        
+    });
 
     function startCalibrate(subindexX, subindexY, id) {
         _MODE = "CALIBRATION";
@@ -3309,11 +3348,27 @@ $(document).ready(function () {
         $(".downloading_bar_container").removeClass("hidden");
         //stop application mode
         console.log("send start download omega");
-        sendSignalDownloadOmega("00240080601cc1906188f91d5a73fd35000562946f080000000006012F511F0100000000");
-
+        
+        //reset TSUI omega
+        if(modelName == "TSSC"){
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc22f000e00000000000000");
+            setTimeout(function(){
+                sendSignalDownloadOmega("00240080601cc1906188f91d5a73fd35000562946f080000000006012F511F0100000000");
+            },10000);
+        }else{
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc42f000e00000000000000");
+            sendSignalDownloadOmega("00240080601cc1906188f91d5a73fd35000562946f080000000006012F511F0100000000");
+            var startInterval = setInterval(function(){
+                sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc42f000e00000000000000");
+                sendSignalDownloadOmega("00240080601cc1906188f91d5a73fd35000562946f080000000006012F511F0100000000");
+            },1000);
+        }
+        setTimeout(function(){
+            clearInterval(startInterval);
+        },5000);
         setTimeout(function () {
             coreDownloadOmega(0);
-        }, 200);
+        }, 12000);
     }
 
     //fonction récursive d'envoi de l'intégralité des lignes du fichier
@@ -3417,23 +3472,23 @@ $(document).ready(function () {
         var postSignalOmega = "00240080601cc1906188f91d5a73fd35000562946f08000000000";
 
         var loader_read_version = "60122501f0108000000";
-        console.log("send loader read version (on attend une réponse)");
+        console.log("send loader read version");
         sendSignalDownloadOmega(postSignalOmega + loader_read_version);
 
         var loader_read_checksum = "60122501f0107000000";
-        console.log("send loader_read_checksum  (on attend une réponse)");
+        console.log("send loader_read_checksum");
         sendSignalDownloadOmega(postSignalOmega + loader_read_checksum);
 
         var appli_read_version = "60122501f0105000000";
-        console.log("send appli_read_version (on attend une réponse)");
+        console.log("send appli_read_version");
         sendSignalDownloadOmega(postSignalOmega + appli_read_version);
 
         var appli_read_checksum = "60122501f0104000000";
-        console.log("send appli_read_checksum (on attend une réponse)");
+        console.log("send appli_read_checksum");
         sendSignalDownloadOmega(postSignalOmega + appli_read_checksum);
 
         var app_run = "6012f511f0101fb1200";
-        console.log("send app_run (on attend une réponse)");
+        console.log("send app_run");
         sendSignalDownloadOmega(postSignalOmega + app_run);
 
 
@@ -4123,7 +4178,6 @@ $(document).ready(function () {
         sendSignal(stopNodeMsg);
     });
     $(".display_all_bt").on('click', function () {
-
         if (familyChoice === "ELEGANCE" && modelChoice === "TSSC") {
             // pour TSSC ELEGANCE
             sendSignal("002400806d68d7551407f09b861e3aad000549a84408000000000328AAAAAAAAAAAAAA88");
@@ -4141,6 +4195,13 @@ $(document).ready(function () {
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200302000000000000");
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200202000000000000");
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200102000000000000");
+        }else if(globalName == "OMEGA"){
+            if(modelName == "TSSC"){
+                
+            }else{
+                sendSignal("002400806d68d7551407f09b861e3aad000549a84401000006c422500800000000000000");
+                sendSignal("002400806d68d7551407f09b861e3aad000549a84401000006e422500a00000000000000");
+            }
         }
     });
     $(".stop_all_bt").on('click', function () {
@@ -4161,6 +4222,13 @@ $(document).ready(function () {
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200300000000000000");
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200200000000000000");
             sendSignal("002400806d68d7551407f09b861e3aad000549a844080000000002200100000000000000");
+        }else if(globalName == "OMEGA"){
+            if(modelName == "TSSC"){
+                
+            }else{
+                sendSignal("002400806d68d7551407f09b861e3aad000549a84401000006c422500000000000000000");
+                sendSignal("002400806d68d7551407f09b861e3aad000549a84401000006e422500000000000000000");
+            }
         }
     });
     $(".start_agila_bt").on('click', function () {
@@ -4169,6 +4237,26 @@ $(document).ready(function () {
     $(".start_elegance_bt").on('click', function () {
         sendSignal("002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2F01300102000000");
     });
+    $(".bt_diag_mode .diag_mod_on").on('click', function(){
+        if(modelName == "TSSC"){
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c0226100000000000000000");
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c6226100000000000000000");
+
+       }else{
+           sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c0426100000000000000000");
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c6426100000000000000000");
+       }
+    });
+    $(".bt_diag_mode .diag_mod_off").on('click', function(){
+        if(modelName == "TSSC"){
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c2226100000000000000000");
+            setTimeout(function(){sendSignal(startSlaveTSSC);},9000);            
+       }else{
+            sendSignal("002400806d68d7551407f09b861e3aad000549a8440000000c2426100000000000000000");
+            setTimeout(function(){sendSignal(startSlaveSBSH);sendSignal(startSlaveSBSH2);},9000); 
+       }
+    });
+    
     $(".change_nodeid").on('click', function () {
         var value = $("#value_nodeid").html().trim();
         if (value !== " ") {
@@ -4347,7 +4435,19 @@ $(document).ready(function () {
         //alert("mode pretest");
     });
     $(".tsui_restart_bt").on('click', function () {
-        sendSignalPic("5");
+        if(globalName == "ELEGANCE"){
+            sendSignalPic("5");
+        }else if(globalName == "OMEGA"){
+            if(modelName == "TSSC"){
+                sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc22f000e00000000000000");
+            }else{
+                sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc42f000e00000000000000");
+                setTimeout(function(){
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844010000028426401000000000000000");
+                },20000)
+            }
+        }
+        
     });
 
 

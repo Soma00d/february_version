@@ -160,7 +160,12 @@ $getGlobalLog = function ($param1, $param2, $param3, $param4, $connexion) {
 
 //check if SN exist in database
 $getSN = function ($serialNumber, $connexion) {
-    $resultats = $connexion->query("SELECT * FROM log_sn WHERE serial_number = '$serialNumber' ");
+    if($serialNumber == "all"){
+        $resultats = $connexion->query("SELECT * FROM log_sn");
+    }else{
+        $resultats = $connexion->query("SELECT * FROM log_sn WHERE serial_number = '$serialNumber' ");
+    }
+    
     $resultats->execute();
     $result = $resultats->fetchAll();
     return json_encode($result);

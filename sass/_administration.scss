@@ -149,7 +149,7 @@
 
 
 }
-#adm_content_user, #adm_content_log{
+#adm_content_user, #adm_content_log, #adm_content_serial{
     position: relative;
     .add_user_description, .export_user_description{
         margin-top: 20px;
@@ -251,7 +251,7 @@
             }
         }
     }
-    .adm_all_user_container, .adm_logs_container{
+    .adm_all_user_container, .adm_logs_container, .adm_serial_container{
         .result_description{
             font-style: italic;
             span{
@@ -261,10 +261,10 @@
             }
         }
     }
-    .array_all_user, .array_all_logs{
+    .array_all_user, .array_all_logs, .array_all_sn{
         margin-top: 25px;
         width: 100%;
-        .header_array_user, .header_array_logs{
+        .header_array_user, .header_array_logs, .header_array_sn{
             .head_item{
                 background: #3b73b9;
                 display: inline-block;
@@ -275,16 +275,20 @@
                 color: white;
                 padding: 1px;
                 margin-right:-2px;
+                &.sn_comment{
+                    width:32%;
+                }
             }
         }
+        
         .header_array_logs{
             .head_item{
                 width: 12%;  
             }                  
         }
-        .content_array_user, .content_array_logs{
-            .line_user, .line_logs{
-                .user_item, .logs_item{
+        .content_array_user, .content_array_logs, .content_array_sn{
+            .line_user, .line_logs, .line_sn{
+                .user_item, .logs_item, .sn_item{
                     display: inline-block;
                     vertical-align: top;
                     width: 13.5%;
@@ -293,24 +297,28 @@
                     padding: 1px;
                     margin-right: 1.7px;
                     font-size: 15px;
-                    height: 23px;
+                    min-height: 23px;
                     &.user_is_admin{
                         padding-top: 3px;
                     }
                     &.user_delete{
                         padding-top: 3px;
                     }
+                    &.sn_comment{
+                        width:31.7%;
+                    }
                 }
+                
                 .logs_item{
                     width: 12%;  
                     &.logs_date{
                         font-size: 13px;
                     }
                 }
-                &:nth-child(even) .user_item, &:nth-child(even) .logs_item{
+                &:nth-child(even) .user_item, &:nth-child(even) .logs_item, &:nth-child(even) .sn_item{
                     background-color:#cde1f0;
                 }
-                &:hover .user_item, &:hover .logs_item{
+                &:hover .user_item, &:hover .logs_item, &:hover .sn_item{
                     border-bottom:1px solid #3b73b9;
                     border-top:1px solid #3b73b9;
                 }
@@ -327,6 +335,25 @@
                     width:15px;
                 }            
             }
+        }
+    }
+}
+
+#adm_content_log, #adm_content_serial{
+    .search_container, .search_container_sn{
+        border: 1px solid black;
+        border-radius: 5px;
+        padding: 15px;
+        background: #dddddd;
+        margin-top: 15px;
+        .search_line{
+            display:inline-block;
+            vertical-align:top;
+            margin-right: 15px; 
+        }
+        .search_bt, .export_bt{
+            width: 100px;
+            height: 20px;
         }
     }
 }

@@ -1025,7 +1025,6 @@
     }
     
     
-    
 }
 
 .download_inge{
@@ -1108,7 +1107,7 @@
         padding: 5px;
         border: 2px solid orange;
         border-radius: 5px;
-        width: 460px;
+        width: 515px;
         font-weight: bold;
         margin-bottom: 24px;
         margin-left: auto;
@@ -1209,7 +1208,34 @@
             }
         }        
     }
-    .eprom_protect{
+    .switch_calibration{
+        min-height: 74px;
+        margin-right: 44px;
+        .get_switch{
+            border-radius: 5px;
+            background: #c4c4c4;
+            font-weight: bold;
+            text-align: center;
+            height: 21px;
+            padding-top: 3px;
+            box-shadow: 1px 1px 1px black;
+            width: 140px;
+            cursor: pointer;
+            margin-top: 11px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 10px;
+            border: none;
+        }
+        .position_result{
+            margin-top: -2px;
+            span{
+                font-weight:bold;
+                font-size: 20px;
+            }
+        }
+    }
+    .eprom_protect, .switch_calibration{
         width: 199px;
         border: 2px solid #3b73b9;
         border-radius: 5px;

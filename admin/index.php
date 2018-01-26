@@ -64,7 +64,7 @@
                       <div class="dropdownlink"><img src="../images/admin/serial.png"> Serial Numbers
                       </div>
                       <ul class="submenuItems">
-                        <li><a href="#">View all SN</a></li>
+                        <li><a href="#" class="menu_item serial_page" data-menulink="serial">View all SN</a></li>
                       </ul>
                     </li>
                   </ul>
@@ -81,6 +81,9 @@
                 </div>
                 <div id="adm_content_log" class="page_content">
                     <?php include('template/log.html'); ?>
+                </div>
+                <div id="adm_content_serial" class="page_content">
+                    <?php include('template/serial.html'); ?>
                 </div>
             </div>
         </div>      

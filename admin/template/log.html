@@ -1,12 +1,13 @@
 <div class="adm_logs_container">
     <div class="title">Logs Management panel</div>
-    <div class="result_description">There are currently <span></span> logs in database.</div>  
+    <div class="result_description">There are currently <span></span> logs in database matching parameters.</div>  
     
-    <div class="bloc_search_log">        
-        <div class="history_bloc_line">Part Number : <input type='text' class='history_pn_input' value=""></div>
-        <div class="history_bloc_line">Serial Number : <input type='text' class='history_sn_input' value=""></div>
-        <div class="history_bloc_line">User SSO : <input type='text' class='history_sso_input' value=""></div>
-        <div class="history_bloc_line btt"><button class="history_bt_search_page">Search</button></div>
+    <div class="search_container">        
+        <div class="search_line">Part Number : <input type='text' class='search_pn_input' value=""></div>
+        <div class="search_line">Serial Number : <input type='text' class='search_sn_input' value=""></div>
+        <div class="search_line">User SSO : <input type='text' class='search_sso_input' value=""></div>
+        <div class="search_line btt"><button class="search_bt">Search</button></div>
+        <div class="search_line"><a href="#" id="export_logs"><button class="export_bt">Export to Excel</button></a></div>
     </div>
     <div class="array_all_logs">
         <div class="header_array_logs">
