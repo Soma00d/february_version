@@ -46,6 +46,46 @@
 
 #content_pretest{
     margin-bottom: 50px;
+    .diag_test_bt{
+        &.hidden{
+            display:block !important;            
+        }
+        .bt_test_ok{
+            border: 2px solid black;
+            padding: 0px;
+            border-radius: 5px;
+            margin-top: 4px;
+            padding-top: 4px;
+            padding-bottom: -10px;
+            height: 25px;
+            cursor: pointer;
+            color: black;
+            display: inline-block;
+            width: 50px;
+            margin-top: 13px;
+            margin-right: 5px;
+            &.on{
+                background:#96ea95;
+            }
+        }
+        .bt_test_fail{
+            border: 2px solid black;
+            padding: 0px;
+            border-radius: 5px;
+            margin-top: 4px;
+            padding-top: 4px;
+            padding-bottom: -10px;
+            height: 25px;
+            cursor: pointer;
+            color: black;
+            display: inline-block;
+            width: 50px;
+            margin-top: 13px;
+            &.on{
+                background:#fea4a4;
+            }
+        }
+    }
     .td_head{
         background: #3b73b9;
         color: white;

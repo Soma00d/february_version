@@ -194,138 +194,183 @@ $(document).ready(function () {
 
         if (userSSO !== "" && partNumber !== "" && serialNumber !== "") {
             $.ajax({
-                url: 'php/api.php?function=get_tsui_repair&param1=' + partNumber,
+                url: 'php/api.php?function=check_user_sso&param1=' + userSSO,
                 type: 'GET',
                 dataType: 'JSON',
                 success: function (data, statut) {
-                    if (data.length == 0) {
-                        alert("No result found with this part number.")
-                    } else {
-                        familyName = data[0].name;
-                        var photo = data[0].photo_link;
-                        family_id = data[0].family;
-                        tstName = data[0].tst_name;
-                        modelName = data[0].model;
-                        typeChoice = data[0].type;
-                        sectionRepair = "diagnostic";
-                        globalName = data[0].family_name;
-
-                        $(".photo_tsui").attr('src', 'images/' + photo);
-                        $(".title_bloc.name").html(familyName);
-                        $(".sso_user").html(userSSO);
-                        $(".part_number").html(partNumber);
-                        $(".serial_number").html(serialNumber);
-                        $("#content_home .information").removeClass("hidden");
-                        $("#content_home .information_diag").removeClass("hidden");
-                        $("#content_home .commentary_bloc").removeClass("hidden");
-
-                        $(".head_userinfo").removeClass("hidden");
-                        $(".head_userinfo .info .role_user").html("Repair");
-                        $(".popup_test_fw .bt_no").addClass(sectionRepair);
-                        $(".popup_test_fw .bt_yes").addClass(sectionRepair);
-
-                        setGenericMessages(globalName.trim());
-                        getInfoCard(globalName, cobID2);
-                        checkSN(serialNumber);
-                    }
-                    //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
-                    $.ajax({
-                        url: 'php/api.php?function=get_dictionaries_by_id&param1=' + family_id,
-                        type: 'GET',
-                        dataType: 'JSON',
-                        success: function (data, statut) {
-                            dictionary = data;
-                            var len = data.length;
-                            joystickContainerNewRepair.empty();
-                            buttonContainer.empty();
-                            ledContainer.empty();
-                            for (var iter = 0; iter < len; iter++) {
-                                if (data[iter].type == "button") {
-                                    if (data[iter].is_led == "1") {
-                                        ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
-                                    } else if (data[iter].is_led == "2") {
-                                        ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
-                                    }
-
-                                    buttonContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>" + data[iter].type + "</span><span class='td'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td totest'>Not tested</span></div>");
-
-
+                    userInfo = data;
+                    if (userInfo.length == 0) {
+                        alert("No result found with this SSO : " + userSSO);
+                    } else if (userInfo[0].user_role == "REPAIR_ALL" || userInfo[0].user_role == "REPAIR_DIAG") {
+                        $.ajax({
+                            url: 'php/api.php?function=get_tsui_repair&param1=' + partNumber,
+                            type: 'GET',
+                            dataType: 'JSON',
+                            success: function (data, statut) {
+                                if (data.length == 0) {
+                                    alert("No result found with this part number.")
                                 } else {
-                                    if (data[iter].type !== "joystick") {
-                                        ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>" + data[iter].type + "</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
+                                    familyName = data[0].name;
+                                    var photo = data[0].photo_link;
+                                    family_id = data[0].family;
+                                    tstName = data[0].tst_name;
+                                    modelName = data[0].model;
+                                    typeChoice = data[0].type;
+                                    sectionRepair = "diagnostic";
+                                    globalName = data[0].family_name;
+
+                                    $(".photo_tsui").attr('src', 'images/' + photo);
+                                    $(".title_bloc.name").html(familyName);
+                                    $(".sso_user").html(userSSO);
+                                    $(".part_number").html(partNumber);
+                                    $(".serial_number").html(serialNumber);
+                                    $("#content_home .information").removeClass("hidden");
+                                    $("#content_home .information_diag").removeClass("hidden");
+                                    $("#content_home .commentary_bloc").removeClass("hidden");
+
+                                    $(".head_userinfo").removeClass("hidden");
+                                    $(".head_userinfo .info .role_user").html("Repair");
+                                    $(".popup_test_fw .bt_no").addClass(sectionRepair);
+                                    $(".popup_test_fw .bt_yes").addClass(sectionRepair);
+
+                                    setGenericMessages(globalName.trim());
+                                    getInfoCard(globalName, cobID2);
+                                    checkSN(serialNumber);
+                                }
+                                //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
+                                $.ajax({
+                                    url: 'php/api.php?function=get_dictionaries_by_id&param1=' + family_id,
+                                    type: 'GET',
+                                    dataType: 'JSON',
+                                    success: function (data, statut) {
+                                        dictionary = data;
+                                        var len = data.length;
+                                        joystickContainerNewRepair.empty();
+                                        buttonContainer.empty();
+                                        ledContainer.empty();
+                                        for (var iter = 0; iter < len; iter++) {
+                                            if (data[iter].type == "button") {
+                                                if (data[iter].is_led == "1") {
+                                                    ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
+                                                } else if (data[iter].is_led == "2") {
+                                                    ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
+                                                }
+
+                                                buttonContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>" + data[iter].type + "</span><span class='td'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td totest'>Not tested</span></div>");
+
+
+                                            } else {
+                                                if (data[iter].type !== "joystick") {
+                                                    ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>" + data[iter].type + "</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
+                                                }
+                                            }
+                                            if (data[iter].type == "joystick") {
+                                                joystickContainerNewRepair.append("<div class='new_joystick' id='id" + data[iter].id + "'><div class='name'>" + data[iter].description + "</div><div class='area_visual'><div class='area_etalon'><img class='cursor' src='images/cross_red.png'></div></div><div class='values'>x : <span class='x_val'></span> y : <span class='y_val'></span></div><div class='diag_test_bt hidden' data-id='"+data[iter].id+"' data-name='"+data[iter].symbol_name+"' data-function='" + data[iter].type + "'><div class='bt_test_ok'>OK</div><div class='bt_test_fail'>FAIL</div></div></div>");
+                                            }
+                                        }
+                                        //gestion des boutons de test des leds et buzzers
+                                        $(".test_bt").on('click', function () {
+                                            var _this = $(this);
+                                            var description = $(this).data('name');
+                                            var onSignal = $(this).data('on');
+                                            var offSignal = $(this).data('off');
+                                            var postSignal = "002400806d68d7551407f09b861e3aad000549a844080000";
+                                            var signalStart = postSignal + onSignal;
+                                            var signalStop = postSignal + offSignal;
+
+                                            var topPos = $(window).scrollTop();
+                                            testPoppin.css('top', topPos + 300 + "px");
+                                            $(".result_array").css("opacity", "0.5");
+
+                                            testPoppin.html("<div class='title'>" + description + "</div><div class='bt_test'><div class='bouton_grey start_bt'>Start</div><div class='bouton_grey stop_bt'>Stop</div></div><div class='result_test'>Did something happen as expected ?</div><div class='bt_test_result'><div class='bouton_grey yes_bt'>YES</div><div class='bouton_grey no_bt'>NO</div></div>");
+
+                                            testPoppin.find(".title").html(description);
+                                            testPoppin.removeClass("hidden");
+
+
+                                            testPoppin.find(".start_bt").on('click', function () {
+                                                sendSignal(signalStart);
+                                            });
+                                            testPoppin.find(".stop_bt").on('click', function () {
+                                                sendSignal(signalStop);
+                                            });
+                                            testPoppin.find(".yes_bt").on('click', function () {
+                                                $(".result_array").css("opacity", "1");
+                                                testPoppin.empty();
+                                                testPoppin.addClass("hidden");
+                                                _this.css('background-color', 'yellowgreen');
+                                                _this.html('TEST OK');
+                                                _this.parent().addClass("tested");
+                                                _this.parent().addClass("testok");
+                                            });
+                                            testPoppin.find(".no_bt").on('click', function () {
+                                                $(".result_array").css("opacity", "1");
+                                                testPoppin.empty();
+                                                testPoppin.addClass("hidden");
+                                                _this.css('background-color', 'red');
+                                                _this.html('TEST FAIL');
+                                                _this.parent().addClass("tested");
+                                            });
+
+
+                                        });
+
+                                        $(".totest").on('click', function () {
+                                            if ($(this).hasClass("tested")) {
+                                                $(this).html("Not tested");
+                                                $(this).removeClass("tested");
+                                                $(this).parent().removeClass("tested");
+                                            } else {
+                                                $(this).html("Tested");
+                                                $(this).addClass("tested");
+                                                $(this).parent().addClass("tested");
+                                            }
+                                        });
+                                        
+                                        $(".bt_test_ok").on('click', function () {
+                                            if ($(this).hasClass("on")) {
+                                                $(this).removeClass("on");
+                                                $(this).parent().removeClass("ok");                                                
+                                            } else {
+                                                $(this).addClass("on");
+                                                $(this).parent().addClass("ok");
+                                                $(this).parent().removeClass("fail");
+                                                $(this).parent().find(".bt_test_fail").removeClass("on");
+                                            }
+                                        });
+                                        $(".bt_test_fail").on('click', function () {
+                                            if ($(this).hasClass("on")) {
+                                                $(this).removeClass("on");
+                                                $(this).parent().removeClass("fail");
+                                            } else {
+                                                $(this).addClass("on");
+                                                $(this).parent().addClass("fail");
+                                                $(this).parent().removeClass("ok");
+                                                $(this).parent().find(".bt_test_ok").removeClass("on");
+                                            }
+                                        });
                                     }
-                                }
-                                if (data[iter].type == "joystick") {
-                                    joystickContainerNewRepair.append("<div class='new_joystick' id='id" + data[iter].id + "'><div class='name'>" + data[iter].description + "</div><div class='area_visual'><div class='area_etalon'><img class='cursor' src='images/cross_red.png'></div></div><div class='values'>x : <span class='x_val'></span> y : <span class='y_val'></span></div></div>");
-                                }
+                                });
                             }
-                            //gestion des boutons de test des leds et buzzers
-                            $(".test_bt").on('click', function () {
-                                var _this = $(this);
-                                var description = $(this).data('name');
-                                var onSignal = $(this).data('on');
-                                var offSignal = $(this).data('off');
-                                var postSignal = "002400806d68d7551407f09b861e3aad000549a844080000";
-                                var signalStart = postSignal + onSignal;
-                                var signalStop = postSignal + offSignal;
-
-                                var topPos = $(window).scrollTop();
-                                testPoppin.css('top', topPos + 300 + "px");
-                                $(".result_array").css("opacity", "0.5");
-
-                                testPoppin.html("<div class='title'>" + description + "</div><div class='bt_test'><div class='bouton_grey start_bt'>Start</div><div class='bouton_grey stop_bt'>Stop</div></div><div class='result_test'>Did something happen as expected ?</div><div class='bt_test_result'><div class='bouton_grey yes_bt'>YES</div><div class='bouton_grey no_bt'>NO</div></div>");
-
-                                testPoppin.find(".title").html(description);
-                                testPoppin.removeClass("hidden");
-
-
-                                testPoppin.find(".start_bt").on('click', function () {
-                                    sendSignal(signalStart);
-                                });
-                                testPoppin.find(".stop_bt").on('click', function () {
-                                    sendSignal(signalStop);
-                                });
-                                testPoppin.find(".yes_bt").on('click', function () {
-                                    $(".result_array").css("opacity", "1");
-                                    testPoppin.empty();
-                                    testPoppin.addClass("hidden");
-                                    _this.css('background-color', 'yellowgreen');
-                                    _this.html('TEST OK');
-                                    _this.parent().addClass("tested");
-                                    _this.parent().addClass("testok");
-                                });
-                                testPoppin.find(".no_bt").on('click', function () {
-                                    $(".result_array").css("opacity", "1");
-                                    testPoppin.empty();
-                                    testPoppin.addClass("hidden");
-                                    _this.css('background-color', 'red');
-                                    _this.html('TEST FAIL');
-                                    _this.parent().addClass("tested");
-                                });
-
-
-                            });
-
-                            $(".totest").on('click', function () {
-                                if ($(this).hasClass("tested")) {
-                                    $(this).html("Not tested");
-                                    $(this).removeClass("tested");
-                                    $(this).parent().removeClass("tested");
-                                } else {
-                                    $(this).html("Tested");
-                                    $(this).addClass("tested");
-                                    $(this).parent().addClass("tested");
-                                }
-                            });
-
-                        }
-                    });
+                        });
+                    } else {
+                        alert("This user does not have access rights for this section.");
+                        $("#content_home .information").addClass("hidden");
+                        $(".head_userinfo").addClass("hidden");
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert("Error while trying to access database.");
+                    $("#content_home .information").addClass("hidden");
+                    $(".head_userinfo").addClass("hidden");
                 }
             });
+
         } else {
             alert("Some fields are missing");
+            $("#content_home .information").addClass("hidden");
+            $(".head_userinfo").addClass("hidden");
         }
-
     });
 
     //CONNEXION SECTION FINALTEST REPAIR
@@ -341,204 +386,228 @@ $(document).ready(function () {
 
         if (userSSO !== "" && partNumber !== "" && serialNumber !== "") {
             $.ajax({
-                url: 'php/api.php?function=get_tsui_repair&param1=' + partNumber,
+                url: 'php/api.php?function=check_user_sso&param1=' + userSSO,
                 type: 'GET',
                 dataType: 'JSON',
                 success: function (data, statut) {
-                    if (data.length == 0) {
-                        alert("No result found with this part number.")
-                    } else {
-                        familyName = data[0].name;
-                        var photo = data[0].photo_link;
-                        family_id = data[0].family;
-                        tstName = data[0].tst_name;
-                        sectionRepair = "finaltest";
-                        globalName = data[0].family_name;
-                        modelName = data[0].model;
-                        typeChoice = data[0].type;
+                    userInfo = data;
+                    if (userInfo.length == 0) {
+                        alert("No result found with this SSO : " + userSSO);
+                    } else if (userInfo[0].user_role == "REPAIR_ALL" || userInfo[0].user_role == "REPAIR_FINAL") {
+                        $.ajax({
+                            url: 'php/api.php?function=get_tsui_repair&param1=' + partNumber,
+                            type: 'GET',
+                            dataType: 'JSON',
+                            success: function (data, statut) {
+                                if (data.length == 0) {
+                                    alert("No result found with this part number.")
+                                } else {
+                                    familyName = data[0].name;
+                                    var photo = data[0].photo_link;
+                                    family_id = data[0].family;
+                                    tstName = data[0].tst_name;
+                                    sectionRepair = "finaltest";
+                                    globalName = data[0].family_name;
+                                    modelName = data[0].model;
+                                    typeChoice = data[0].type;
 
-                        $(".photo_tsui").attr('src', 'images/' + photo);
-                        $(".title_bloc.name").html(familyName);
-                        $(".sso_user").html(userSSO);
-                        $(".part_number").html(partNumber);
-                        $(".serial_number").html(serialNumber);
-                        $("#content_home .information").removeClass("hidden");
-                        $("#content_home .information_finaltest").removeClass("hidden");
-                        $("#content_home .commentary_bloc").removeClass("hidden");
-                        $(".head_userinfo").removeClass("hidden");
-                        $(".head_userinfo .info .role_user").html("Repair");
-                        $(".popup_test_fw .bt_no").addClass(sectionRepair);
-                        $(".popup_test_fw .bt_yes").addClass(sectionRepair);
+                                    $(".photo_tsui").attr('src', 'images/' + photo);
+                                    $(".title_bloc.name").html(familyName);
+                                    $(".sso_user").html(userSSO);
+                                    $(".part_number").html(partNumber);
+                                    $(".serial_number").html(serialNumber);
+                                    $("#content_home .information").removeClass("hidden");
+                                    $("#content_home .information_finaltest").removeClass("hidden");
+                                    $("#content_home .commentary_bloc").removeClass("hidden");
+                                    $(".head_userinfo").removeClass("hidden");
+                                    $(".head_userinfo .info .role_user").html("Repair");
+                                    $(".popup_test_fw .bt_no").addClass(sectionRepair);
+                                    $(".popup_test_fw .bt_yes").addClass(sectionRepair);
 
 
-                        setGenericMessages(globalName.trim());
-                        getInfoCard(globalName, cobID2);
-                        checkSN(serialNumber);
-                    }
-                    //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
-                    $.ajax({
-                        url: 'php/api.php?function=get_dictionaries_by_id&param1=' + family_id,
-                        type: 'GET',
-                        dataType: 'JSON',
-                        success: function (data, statut) {
-                            dictionary = data;
-                            var len = data.length;
-                            joystickCalibrationContainer.empty();
-                            joystickVerifyContainer.empty();
-                            $(".joystick_container_new").empty();
-
-                            for (var iter = 0; iter < len; iter++) {
-                                switch (data[iter].type) {
-                                    case "joystick":
-                                        joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
-                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                + "<div class='calibrate_bt'>"
-                                                + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                + "<div class='calibrate_tool hidden'>"
-                                                + "<div class='status_calib'></div>"
-                                                + "<div class='action_calib'></div>"
-                                                + "<div class='validate_calib'>Validate</div>"
-                                                + "</div>"
-                                                + "</div>"
-                                                + "</div>");
-                                        joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
-                                                + "<div class='joystick_val_info'>"
-                                                + "<div class='title_verify'>" + data[iter].description + "</div>"
-                                                + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
-                                                + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                + "<div class='bloc_left_joy'>"
-                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
-                                                + "</div>"
-                                                + "<div class='bloc_right_joy'>"
-                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
-                                                + "</div>"
-                                                + "</div>"
-                                                + "</div>");
-                                        break;
-                                    case "mushroom":
-                                        joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + " mushroom' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
-                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                + "<div class='calibrate_bt'>"
-                                                + "<button class='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                + "<div class='calibrate_tool hidden'>"
-                                                + "<div class='status_calib'></div>"
-                                                + "<div class='action_calib'></div>"
-                                                + "<div class='validate_calib'>Validate</div>"
-                                                + "</div>"
-                                                + "</div>"
-                                                + "</div>");
-                                        joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
-                                                + "<div class='joystick_val_info'>"
-                                                + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
-                                                + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                + "<div class='bloc_left_joy'>"
-                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
-                                                + "</div>"
-                                                + "<div class='bloc_right_joy'>"
-                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
-                                                + "</div>"
-                                                + "</div>"
-                                                + "</div>");
-                                        break;
+                                    setGenericMessages(globalName.trim());
+                                    getInfoCard(globalName, cobID2);
+                                    checkSN(serialNumber);
                                 }
+                                //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
+                                $.ajax({
+                                    url: 'php/api.php?function=get_dictionaries_by_id&param1=' + family_id,
+                                    type: 'GET',
+                                    dataType: 'JSON',
+                                    success: function (data, statut) {
+                                        dictionary = data;
+                                        var len = data.length;
+                                        joystickCalibrationContainer.empty();
+                                        joystickVerifyContainer.empty();
+                                        $(".joystick_container_new").empty();
+
+                                        for (var iter = 0; iter < len; iter++) {
+                                            switch (data[iter].type) {
+                                                case "joystick":
+                                                    joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
+                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                            + "<div class='calibrate_bt'>"
+                                                            + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                            + "<div class='calibrate_tool hidden'>"
+                                                            + "<div class='status_calib'></div>"
+                                                            + "<div class='action_calib'></div>"
+                                                            + "<div class='validate_calib'>Validate</div>"
+                                                            + "</div>"
+                                                            + "</div>"
+                                                            + "</div>");
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
+                                                            + "<div class='joystick_val_info'>"
+                                                            + "<div class='title_verify'>" + data[iter].description + "</div>"
+                                                            + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
+                                                            + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
+                                                            + "<div class='bloc_left_joy'>"
+                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "</div>"
+                                                            + "<div class='bloc_right_joy'>"
+                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "</div>"
+                                                            + "</div>"
+                                                            + "</div>");
+                                                    break;
+                                                case "mushroom":
+                                                    joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + " mushroom' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
+                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                            + "<div class='calibrate_bt'>"
+                                                            + "<button class='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                            + "<div class='calibrate_tool hidden'>"
+                                                            + "<div class='status_calib'></div>"
+                                                            + "<div class='action_calib'></div>"
+                                                            + "<div class='validate_calib'>Validate</div>"
+                                                            + "</div>"
+                                                            + "</div>"
+                                                            + "</div>");
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
+                                                            + "<div class='joystick_val_info'>"
+                                                            + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
+                                                            + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
+                                                            + "<div class='bloc_left_joy'>"
+                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "</div>"
+                                                            + "<div class='bloc_right_joy'>"
+                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "</div>"
+                                                            + "</div>"
+                                                            + "</div>");
+                                                    break;
+                                            }
+                                        }
+                                        //gestion des boutons de test des leds et buzzers
+                                        $(".test_bt").on('click', function () {
+                                            var _this = $(this);
+                                            var description = $(this).data('name');
+                                            var press = $(this).data('press');
+                                            var release = $(this).data('release');
+                                            var canId = $(this).data('canid');
+                                            var dlc = "0" + (press.toString().length / 2) + "0000";
+                                            var signalStart = "002400806d68d7551407f09b861e3aad000549a844" + dlc + canId + press;
+                                            var signalStop = "002400806d68d7551407f09b861e3aad000549a844" + dlc + canId + release;
+
+                                            testPoppin.html("<div class='title'>" + description + "</div><div class='bt_test'><div class='bouton_grey start_bt'>Start</div><div class='bouton_grey stop_bt'>Stop</div></div><div class='result_test'>Did something happen as expected ?</div><div class='bt_test_result'><div class='bouton_grey yes_bt'>YES</div><div class='bouton_grey no_bt'>NO</div></div>");
+
+                                            testPoppin.find(".title").html(description);
+                                            testPoppin.removeClass("hidden");
+
+                                            testPoppin.find(".start_bt").on('click', function () {
+                                                sendSignal(signalStart);
+                                            });
+                                            testPoppin.find(".stop_bt").on('click', function () {
+                                                sendSignal(signalStop);
+                                            });
+                                            testPoppin.find(".yes_bt").on('click', function () {
+                                                testPoppin.empty();
+                                                testPoppin.addClass("hidden");
+                                                _this.css('background-color', 'yellowgreen');
+                                                _this.html('TEST OK');
+                                                _this.parent().addClass("tested");
+                                                _this.parent().addClass("testok");
+                                            });
+                                            testPoppin.find(".no_bt").on('click', function () {
+                                                testPoppin.empty();
+                                                testPoppin.addClass("hidden");
+                                                _this.css('background-color', 'red');
+                                                _this.html('TEST FAIL');
+                                                _this.parent().addClass("tested");
+                                            });
+                                        });
+
+                                        $(".totest").on('click', function () {
+                                            if ($(this).hasClass("tested")) {
+                                                $(this).html("Not tested");
+                                                $(this).removeClass("tested");
+                                                $(this).parent().removeClass("tested");
+                                            } else {
+                                                $(this).html("Tested");
+                                                $(this).addClass("tested");
+                                                $(this).parent().addClass("tested");
+                                            }
+                                        });
+
+                                        calibrateContainer.find(".calibrate_bt button").on('click', function () {
+                                            var id = $(this).data('id');
+                                            $(this).addClass("hidden");
+                                            if ($(this).hasClass('mushroom')) {
+                                                var subindex = $(this).data('mush');
+                                                startCalibrateMushroom(subindex, id);
+                                            } else {
+                                                var subindexX = $(this).data('long');
+                                                var subindexY = $(this).data('lat');
+                                                startCalibrate(subindexX, subindexY, id);
+                                            }
+
+                                        });
+                                        $(".verify_calibration").on('click', function () {
+                                            var subindexX = $(this).data('long');
+                                            var subindexY = $(this).data('lat');
+                                            var identifier = $(this).data('id');
+                                            if (subindexX == "") {
+                                                subindexX = "null"
+                                            }
+                                            ;
+                                            if (subindexY == "") {
+                                                subindexY = "null"
+                                            }
+                                            ;
+                                            startVerifyCalibration(subindexX, subindexY, identifier);
+                                        });
+                                        $(".stop_calibration_verif").on('click', function () {
+                                            var identifier = $(this).data('id');
+                                            stopVerifyCalibration(identifier);
+                                        });
+
+                                    }
+                                });
                             }
-                            //gestion des boutons de test des leds et buzzers
-                            $(".test_bt").on('click', function () {
-                                var _this = $(this);
-                                var description = $(this).data('name');
-                                var press = $(this).data('press');
-                                var release = $(this).data('release');
-                                var canId = $(this).data('canid');
-                                var dlc = "0" + (press.toString().length / 2) + "0000";
-                                var signalStart = "002400806d68d7551407f09b861e3aad000549a844" + dlc + canId + press;
-                                var signalStop = "002400806d68d7551407f09b861e3aad000549a844" + dlc + canId + release;
-
-                                testPoppin.html("<div class='title'>" + description + "</div><div class='bt_test'><div class='bouton_grey start_bt'>Start</div><div class='bouton_grey stop_bt'>Stop</div></div><div class='result_test'>Did something happen as expected ?</div><div class='bt_test_result'><div class='bouton_grey yes_bt'>YES</div><div class='bouton_grey no_bt'>NO</div></div>");
-
-                                testPoppin.find(".title").html(description);
-                                testPoppin.removeClass("hidden");
-
-                                testPoppin.find(".start_bt").on('click', function () {
-                                    sendSignal(signalStart);
-                                });
-                                testPoppin.find(".stop_bt").on('click', function () {
-                                    sendSignal(signalStop);
-                                });
-                                testPoppin.find(".yes_bt").on('click', function () {
-                                    testPoppin.empty();
-                                    testPoppin.addClass("hidden");
-                                    _this.css('background-color', 'yellowgreen');
-                                    _this.html('TEST OK');
-                                    _this.parent().addClass("tested");
-                                    _this.parent().addClass("testok");
-                                });
-                                testPoppin.find(".no_bt").on('click', function () {
-                                    testPoppin.empty();
-                                    testPoppin.addClass("hidden");
-                                    _this.css('background-color', 'red');
-                                    _this.html('TEST FAIL');
-                                    _this.parent().addClass("tested");
-                                });
-                            });
-
-                            $(".totest").on('click', function () {
-                                if ($(this).hasClass("tested")) {
-                                    $(this).html("Not tested");
-                                    $(this).removeClass("tested");
-                                    $(this).parent().removeClass("tested");
-                                } else {
-                                    $(this).html("Tested");
-                                    $(this).addClass("tested");
-                                    $(this).parent().addClass("tested");
-                                }
-                            });
-
-                            calibrateContainer.find(".calibrate_bt button").on('click', function () {
-                                var id = $(this).data('id');
-                                $(this).addClass("hidden");
-                                if ($(this).hasClass('mushroom')) {
-                                    var subindex = $(this).data('mush');
-                                    startCalibrateMushroom(subindex, id);
-                                } else {
-                                    var subindexX = $(this).data('long');
-                                    var subindexY = $(this).data('lat');
-                                    startCalibrate(subindexX, subindexY, id);
-                                }
-
-                            });
-                            $(".verify_calibration").on('click', function () {
-                                var subindexX = $(this).data('long');
-                                var subindexY = $(this).data('lat');
-                                var identifier = $(this).data('id');
-                                if (subindexX == "") {
-                                    subindexX = "null"
-                                }
-                                ;
-                                if (subindexY == "") {
-                                    subindexY = "null"
-                                }
-                                ;
-                                startVerifyCalibration(subindexX, subindexY, identifier);
-                            });
-                            $(".stop_calibration_verif").on('click', function () {
-                                var identifier = $(this).data('id');
-                                stopVerifyCalibration(identifier);
-                            });
-
-                        }
-                    });
+                        });
+                    } else {
+                        alert("This user does not have access rights for this section.");
+                        $("#content_home .information").addClass("hidden");
+                        $(".head_userinfo").addClass("hidden");
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    alert("Error while trying to access database.");
+                    $("#content_home .information").addClass("hidden");
+                    $(".head_userinfo").addClass("hidden");
                 }
             });
+
         } else {
             alert("Some fields are missing");
+            $("#content_home .information").addClass("hidden");
+            $(".head_userinfo").addClass("hidden");
         }
 
     });
@@ -622,7 +691,6 @@ $(document).ready(function () {
                                         $(".calibration_zone_container").empty();
                                         $(".calibration_test_container").empty();
                                         for (var iter = 0; iter < len; iter++) {
-                                            console.log(data[iter].zone);
                                             switch (data[iter].zone) {
                                                 case "0":
                                                     if (data[iter].is_led == "1") {
@@ -751,6 +819,7 @@ $(document).ready(function () {
                                             $(".nodeid_container").addClass("hidden");
                                             $(".start_node_bt").addClass("hidden");
                                             $(".stop_node_bt").addClass("hidden");
+                                            $(".bt_diag_mode").removeClass("hidden");
                                             if(modelName == "TSSC" ){
                                                 $(".hw_signals_container.tssc").removeClass("hidden");
                                             }else{
@@ -1457,18 +1526,14 @@ $(document).ready(function () {
                                 if (filterName == "ID") {
                                     if (canId == filterValue && filterType == "exclude") {
                                         conflictNb++;
-                                        console.log("conflict EXC ID detected name :" + filterName + " type : " + filterType + " value :" + filterValue + "-----id : " + canId + " data :" + canData);
                                     } else if (canId != filterValue && filterType == "include") {
                                         conflictNb++;
-                                        console.log("conflict INC ID detected name :" + filterName + " type : " + filterType + " value :" + filterValue + "-----id : " + canId + " data : " + canData);
                                     }
                                 } else {
                                     if (canData == filterValue && filterType == "exclude") {
                                         conflictNb++;
-                                        console.log("conflict EXC DATA detected name :" + filterName + " type : " + filterType + " value :" + filterValue + "-----id : " + canId + " data : " + canData);
                                     } else if (canData != filterValue && filterType == "include") {
                                         conflictNb++;
-                                        console.log("conflict INC DATA detected detected name :" + filterName + " type : " + filterType + " value :" + filterValue + "-----id : " + canId + " data : " + canData);
                                     }
                                 }
 
@@ -1822,9 +1887,15 @@ $(document).ready(function () {
                 spyBox.append("<div class='line_spy'><span class='can_id_spy' data-id='" + canId + "'>" + canId + "</span> <span class='can_data_spy'>" + canData + "</span> <span class='nb'>1</span><span class='ts'>" + minutes+"m "+seconds+","+milliseconds+"s"+ "</span></div>");
             } else {
                 var nb = $("#dialog-spybox .content_line .line_spy:last-child .nb").html();
+                var today = new Date();
+                var minutes = today.getMinutes();
+                var seconds = today.getSeconds();
+                var milliseconds = today.getMilliseconds();if(String(milliseconds).length <3){milliseconds="0"+milliseconds};
+                
                 nb = parseInt(nb);
                 nb++;
                 $(".content_line .line_spy:last-child .nb").html(nb);
+                $(".content_line .line_spy:last-child .ts").html(minutes+"m "+seconds+","+milliseconds+"s");
             }
 
         }
@@ -2029,6 +2100,20 @@ $(document).ready(function () {
                 }
             }
         });
+        $("#content_pretest .joystick_container_new_repair .new_joystick").each(function () {
+            name = $(this).find(".diag_test_bt").data('name');
+            fct = $(this).find(".diag_test_bt").data('function');
+            if ($(this).find(".diag_test_bt").hasClass("ok")) {
+                completeName = name + " - " + fct;
+                jsonLog.push({name: completeName, test: 'OK', fct: fct});
+            } else if($(this).find(".diag_test_bt").hasClass("fail")) {
+                completeName = name + " - " + fct;
+                jsonLog.push({name: completeName, test: 'FAILED', fct: fct});
+            }else{
+                completeName = name + " - " + fct;
+                jsonLog.push({name: completeName, test: 'untested', fct: fct});
+            }
+        });
         console.log(jsonLog);
         console.log("------");
         jsonLog = JSON.stringify(jsonLog);
@@ -2093,6 +2178,12 @@ $(document).ready(function () {
                 if (msg[i].test == "untested") {
                     var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
                 }
+                if (msg[i].test == "OK") {
+                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:green'>" + msg[i].test + "</span></div>"
+                }
+                if (msg[i].test == "FAILED") {
+                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:red'>" + msg[i].test + "</span></div>"
+                }
                 lineJoystick += line;
             }
 
@@ -2100,7 +2191,7 @@ $(document).ready(function () {
         var currentdate = new Date();
         var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
         var myWindow = window.open('', '', 'width=1000,height=800');
-        myWindow.document.write("<h2>PRETEST LOG RECORD - " + datetime + "</h2><div style='border:1px solid black;padding:5px;'><b>Family</b> : " + familyName + " - <b>PN</b> : " + partNumber + " - <b>SN</b> : " + serialNumber + " - <b>Firmware version</b> : 2.0.3 - <b>User SSO</b> : " + userSSO + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div>");
+        myWindow.document.write("<h2>PRETEST LOG RECORD - " + datetime + "</h2><div style='border:1px solid black;padding:5px;'><b>Family</b> : " + familyName + " - <b>PN</b> : " + partNumber + " - <b>SN</b> : " + serialNumber + " - <b>Firmware version</b> : 2.0.3 - <b>User SSO</b> : " + userSSO + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div><h3>JOYSTICKS</h3><div>" + lineJoystick + "</div>");
         myWindow.document.close();
         myWindow.focus();
         myWindow.print();
@@ -4437,6 +4528,7 @@ $(document).ready(function () {
     $(".tsui_restart_bt").on('click', function () {
         if(globalName == "ELEGANCE"){
             sendSignalPic("5");
+            setTimeout(function(){sendSignal(startNodeMsg)},20000)
         }else if(globalName == "OMEGA"){
             if(modelName == "TSSC"){
                 sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc22f000e00000000000000");
@@ -4460,9 +4552,14 @@ $(document).ready(function () {
         if (globalName == "OMEGA") {
             signal = adaptSignalOmega(signal);
         }
-        var jsonData = '{"type":"signal", "msg":"' + signal + '"}';
-        console.log(jsonData);
-        ws.send(jsonData);
+        
+        if(is_hexadecimal(signal)){
+            var jsonData = '{"type":"signal", "msg":"' + signal + '"}';
+            console.log(jsonData);        
+            ws.send(jsonData);
+        }else{
+            alert("Error : message not in hexadecimal, sending aborted to prevent Gateway corruption. "+signal.substring(42, signal.length));
+        }
     }
     function sendSignalDownloadOmega(signal) {
         signal = addZeroAfter(signal, 72);
