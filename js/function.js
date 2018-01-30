@@ -234,7 +234,10 @@ $(document).ready(function () {
                                     $(".popup_test_fw .bt_yes").addClass(sectionRepair);
 
                                     setGenericMessages(globalName.trim());
-                                    getInfoCard(globalName, cobID2);
+                                    setTimeout(function(){
+                                        getInfoCard(globalName, cobID2);
+                                    },500);
+                                    
                                     checkSN(serialNumber);
                                 }
                                 //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
@@ -426,7 +429,9 @@ $(document).ready(function () {
 
 
                                     setGenericMessages(globalName.trim());
-                                    getInfoCard(globalName, cobID2);
+                                    setTimeout(function(){
+                                        getInfoCard(globalName, cobID2);
+                                    },500);
                                     checkSN(serialNumber);
                                 }
                                 //Recupération du dictionnaire correspondant + remplissage du tableau diagnostique
@@ -673,8 +678,11 @@ $(document).ready(function () {
                                     $(".head_userinfo").removeClass("hidden");
                                     $(".head_userinfo .info .role_user").html("Engineering");
 
-                                    getInfoCard(globalName, cobID2);
+                                    
                                     setGenericMessages(globalName.trim());
+                                    setTimeout(function(){
+                                        getInfoCard(globalName, cobID2);
+                                    },500)
                                 }
                                 //Recupération du dictionnaire correspondant + remplissage des zones toolbox
                                 $.ajax({
@@ -975,7 +983,7 @@ $(document).ready(function () {
         switch (_MODE) {
             case "START":
                 var message = JSON.parse(event.data);
-                console.log(event.data);
+                console.log("start_mode"+event.data);
                 if (message.type == "from_GW") {
                     var canId = message.canId;
                     var canData = message.canData;
@@ -1330,7 +1338,7 @@ $(document).ready(function () {
                 break;
             case "CALIBRATION":
                 var message = JSON.parse(event.data);
-                console.log(event.data);
+                console.log(event.data);                
                 if (message.type == "from_GW") {
                     var canId = message.canId;
                     var canData = message.canData;
@@ -1815,13 +1823,17 @@ $(document).ready(function () {
     ///////////////////////////////////////// SET GENERIC MESSAGES ///////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     function setGenericMessages(family) {
-        if (family === "ELEGANCE") {
-            startNodeMsg = "002400806d68d7551407f09b861e3aad000549a8440200000000000001" + nodeID + "000000000000";
-            stopNodeMsg = "002400806d68d7551407f09b861e3aad000549a8440200000000000002" + nodeID + "000000000000";
+        if (family === "ELEGANCE") {            
             //orientation du can hub A -> prise sub D9 elegance
             sendSignalPic("A");
-            cobID1 = addHexVal("00000580", nodeID);
-            cobID2 = addHexVal("00000600", nodeID);
+            setTimeout(function(){
+                startNodeMsg = "002400806d68d7551407f09b861e3aad000549a8440200000000000001" + nodeID + "000000000000";
+                stopNodeMsg = "002400806d68d7551407f09b861e3aad000549a8440200000000000002" + nodeID + "000000000000";
+                cobID1 = addHexVal("00000580", nodeID);
+                cobID2 = addHexVal("00000600", nodeID);
+                sendSignal(startNodeMsg);
+            },400)
+            
             $(".start_elegance_bt").removeClass("hidden");
             switch (modelName) {
                 case "SMARTBOX" :
@@ -1832,7 +1844,7 @@ $(document).ready(function () {
                 default:
                     break;
             }
-            sendSignal(startNodeMsg);
+            
         } else if (family === "OMEGA") {
             resetMasterTSSC = "002400806d68d7551407f09b861e3aad000549a8440800001FC20F000E00000000000000";
             startSlaveTSSC = "002400806d68d7551407f09b861e3aad000549a844010000028226404000000000000000";
@@ -3485,10 +3497,14 @@ $(document).ready(function () {
                 console.log("LINE " + startIndex);
                 var lengthFirstLine = arrayOfLines[startIndex].length - 1;
                 var newval = lengthFirstLine.toString(16);
-                if (lengthFirstLine <= 15) {
-                    newval = "0" + newval
-                }
                 var customCAN = Cal_post + Cal_dlc + canId + "21501f01" + newval + "000000";
+                if (lengthFirstLine <= 15) {
+                    newval = "0" + newval;                    
+                }else if(lengthFirstLine > 255){
+                    newval = "0" + newval; 
+                    customCAN = Cal_post + Cal_dlc + canId + "21501f01" + newval + "0000";
+                }
+                
                 sendSignal(customCAN);
                 setTimeout(function () {
                     var asciiToHex = "";
@@ -3497,7 +3513,7 @@ $(document).ready(function () {
                     }
                     sendMultipleSignal(asciiToHex, canId, startIndex);
 
-                }, 2);
+                }, 200);
             }
         } else {
             setTimeout(function () {
@@ -3650,7 +3666,7 @@ $(document).ready(function () {
                         } else {
                             setTimeout(function () {
                                 sendSingle(index + 1);
-                            }, 5);
+                            }, 50);
                         }
                         clearInterval(checkResponse);
 //                        console.log("launch core download");
@@ -3660,7 +3676,7 @@ $(document).ready(function () {
                     clearInterval(checkResponse);
 //                    console.log("stop check interval");
                 }
-            }, 5);
+            }, 50);
 
         }
 
@@ -3709,7 +3725,7 @@ $(document).ready(function () {
             } else {
                 setTimeout(function () {
                     sendSingle(index + 1);
-                }, 1);
+                }, 10);
             }
 
         }
@@ -4553,7 +4569,7 @@ $(document).ready(function () {
             signal = adaptSignalOmega(signal);
         }
         
-        if(is_hexadecimal(signal)){
+        if(is_hexadecimal(signal) || signal.length <= 72){
             var jsonData = '{"type":"signal", "msg":"' + signal + '"}';
             console.log(jsonData);        
             ws.send(jsonData);
