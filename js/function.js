@@ -3,6 +3,8 @@ $(document).ready(function () {
     var ws = new WebSocket("ws://localhost:8100");
     var dictionary = {};
     var jsonLog = [];
+    var calibLog = [];
+    var calibLogJSON;
     var userInfo = {};
 
     //------//
@@ -450,30 +452,49 @@ $(document).ready(function () {
                                             switch (data[iter].type) {
                                                 case "joystick":
                                                     joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
-                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                            + "<div class='calibrate_bt'>"
-                                                            + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                            + "<div class='calibrate_tool hidden'>"
-                                                            + "<div class='status_calib'></div>"
-                                                            + "<div class='action_calib'></div>"
-                                                            + "<div class='validate_calib'>Validate</div>"
-                                                            + "</div>"
-                                                            + "</div>"
+                                                            +"<div class='bloc_gestion_calib'>"
+                                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                                + "<div class='calibrate_bt'>"
+                                                                + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                                + "<div class='calibrate_tool hidden'>"
+                                                                + "<div class='status_calib'></div>"
+                                                                + "<div class='action_calib'></div>"
+                                                                + "<div class='validate_calib'>Validate</div>"
+                                                                + "</div>"
+                                                                + "</div>"
+                                                            +"</div>"
+                                                            +"<div class='img_calib'><img src='images/" + data[iter].photo_link + "'></div>"
                                                             + "</div>");
-                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
                                                             + "<div class='title_verify'>" + data[iter].description + "</div>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
                                                             + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                            + "<div class='bloc_left_joy'>"
-                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "<div class='bloc_pourcentage'>"
+                                                                + "<div class='title'>Final Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
-                                                            + "<div class='bloc_right_joy'>"
-                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "<div class='bloc_raw_data'>"
+                                                                + "<div class='title'>Raw Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                               + "<span class='text_config'>Zero X : </span><span class='raw_zero_x get_val'  data-descri='zero_x'>-</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='raw_min_x get_val'  data-descri='left'>-</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='raw_max_x get_val'  data-descri='right'>-</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Zero Y : </span><span class='raw_zero_y get_val' data-descri='zero_y'>-</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='raw_min_y get_val' data-descri='bottom'>-</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='raw_max_y get_val' data-descri='top'>-</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
@@ -490,7 +511,7 @@ $(document).ready(function () {
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
-                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
                                                             + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
@@ -752,29 +773,49 @@ $(document).ready(function () {
                                                 case "joystick":
                                                     joystickContainerNew.append("<div class='new_joystick' id='id" + data[iter].id + "'><div class='name'>" + data[iter].description + "</div><div class='area_visual'><div class='area_etalon'><img class='cursor' src='images/cross_red.png'></div></div><div class='values'>x : <span class='x_val'></span> y : <span class='y_val'></span></div></div>");
                                                     joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
-                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                            + "<div class='calibrate_bt'>"
-                                                            + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                            + "<div class='calibrate_tool hidden'>"
-                                                            + "<div class='status_calib'></div>"
-                                                            + "<div class='action_calib'></div>"
-                                                            + "<div class='validate_calib'>Validate</div>"
-                                                            + "</div>"
-                                                            + "</div>"
+                                                            +"<div class='bloc_gestion_calib'>"
+                                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                                + "<div class='calibrate_bt'>"
+                                                                + "<button data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                                + "<div class='calibrate_tool hidden'>"
+                                                                + "<div class='status_calib'></div>"
+                                                                + "<div class='action_calib'></div>"
+                                                                + "<div class='validate_calib'>Validate</div>"
+                                                                + "</div>"
+                                                                + "</div>"
+                                                            +"</div>"
+                                                            +"<div class='img_calib'><img src='images/" + data[iter].photo_link + "'></div>"
                                                             + "</div>");
-                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
+                                                            + "<div class='title_verify'>" + data[iter].description + "</div>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
-                                                            + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                            + "<div class='bloc_left_joy'>"
-                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
+                                                            + "<div class='bloc_pourcentage'>"
+                                                                + "<div class='title'>Final Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
-                                                            + "<div class='bloc_right_joy'>"
-                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "<div class='bloc_raw_data'>"
+                                                                + "<div class='title'>Raw Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                                + "<span class='text_config'>Zero X : </span><span class='raw_zero_x get_val'  data-descri='zero_x'>-</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='raw_min_x get_val'  data-descri='left'>-</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='raw_max_x get_val'  data-descri='right'>-</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Zero Y : </span><span class='raw_zero_y get_val' data-descri='zero_y'>-</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='raw_min_y get_val' data-descri='bottom'>-</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='raw_max_y get_val' data-descri='top'>-</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
@@ -792,7 +833,7 @@ $(document).ready(function () {
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
-                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "'>"
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
                                                             + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
@@ -2593,7 +2634,7 @@ $(document).ready(function () {
         $.ajax({
             type: "POST",
             url: "php/api.php?function=save_log_final",
-            data: {jsonlog: jsonLogFinal, sn: serialNumber, pn: partNumber, sso: userSSO, FWfctV: FWfctV, FWcalibV: FWcalibV, SWv: SWv, enableTens: currEnableT, enableFreq: currEnableF, alimTestbench: currGlobalVoltage, alimTsui: currTsuiVoltage},
+            data: {jsonlog: jsonLogFinal, sn: serialNumber, pn: partNumber, sso: userSSO, FWfctV: FWfctV, FWcalibV: FWcalibV, SWv: SWv, enableTens: currEnableT, enableFreq: currEnableF, alimTestbench: currGlobalVoltage, alimTsui: currTsuiVoltage, jsonCalibLog : calibLogJSON},
             success: function (msg) {
                 alert("Your log has been saved.");
                 printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, currEnableF, currEnableT);
@@ -2604,11 +2645,13 @@ $(document).ready(function () {
     //Generation du rapport de test et affichage de la fenetre d'impression 
     function printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, currEnableF, currEnableT) {
         var msg = JSON.parse(jsonLogFinal);
+        var msgCalib = JSON.parse(calibLogJSON);
         var lineButton = "";
         var lineLed = "";
         var lineDisplay = "";
         var lineJoystick = "";
         var lineBuzzer = "";
+        var lineCalib = "";
         var lsl = 23.8;
         var usl = 24.2;
         var testAlimGlobal;
@@ -2724,6 +2767,11 @@ $(document).ready(function () {
             }
 
         }
+        for (var i = 0; i < msgCalib.length; i++){
+            var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>"+msgCalib[i].description+"</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+msgCalib[i].result+"</span></div>"
+            lineCalib += line;
+        }
+        
         var currentdate = new Date();
         var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
         var myWindow = window.open('', '', 'width=1000,height=800');
@@ -2745,6 +2793,9 @@ $(document).ready(function () {
                 + "<h3>7 SEGMENTS DISPLAYS</h3>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineDisplay + "</div>"
+                + "<h3>CALIBRATION</h3>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Action</b></span></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Raw Data</b></span></div>"
+                + "<div>" + lineCalib + "</div>"
                 + "<h3>JOYSTICKS</h3>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Action</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Linearity Result</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Range Result</b></span><span style='display:inline-block;vertical-align:top;width:80px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineJoystick + "</div>"
@@ -2932,11 +2983,13 @@ $(document).ready(function () {
                 var a1 = axisRawZeroLong.substring(0, 2);
                 var a2 = axisRawZeroLong.substring(2, 4);
                 var afinal = a2 + a1;
-                afinal = convertHexa2(afinal);
+                var afinalSigned = convertHexa2(afinal);
+                afinal = convertHexa2(afinal);                
                 afinal = Math.abs(afinal);
                 console.log(afinal, seuilMinZero, seuilMaxZero);
 
-                if (seuilMinZero < afinal && afinal < seuilMaxZero) {
+                if (seuilMinZero <= afinal && afinal < seuilMaxZero) {
+                    $(".realtime_joysticks_val.id" + identifier).find(".raw_zero_x").html(afinalSigned);
                     var newSignal = signalComposer(axisRawZeroLong, "2054", subindexX); //param = response + header for zero long                
                     sendSignal(newSignal);
                     calibrateMaxLong(subindexX, subindexY, identifier);
@@ -2963,16 +3016,19 @@ $(document).ready(function () {
                 var a1 = axisRawMaxLong.substring(0, 2);
                 var a2 = axisRawMaxLong.substring(2, 4);
                 var afinal = a2 + a1;
+                var afinalSigned = convertHexa2(afinal);
                 afinal = convertHexa2(afinal);
-                afinal = Math.abs(afinal);
-                console.log(afinal, seuilMinAxis, seuilMaxAxis);
+                if(afinal > 0){
+                    afinal = Math.abs(afinal);
+                    console.log(afinal, seuilMinAxis, seuilMaxAxis);
 
-                if (seuilMinAxis < afinal && afinal < seuilMaxAxis) {
-                    var newSignal = signalComposer(axisRawMaxLong, "2254", subindexX); //param = response + header for max long
-                    sendSignal(newSignal);
-                    calibrateMinLong(subindexX, subindexY, identifier);
-                }
-                ;
+                    if (seuilMinAxis <= afinal && afinal < seuilMaxAxis) {
+                        $(".realtime_joysticks_val.id" + identifier).find(".raw_max_x").html(afinalSigned);
+                        var newSignal = signalComposer(axisRawMaxLong, "2254", subindexX); //param = response + header for max long
+                        sendSignal(newSignal);
+                        calibrateMinLong(subindexX, subindexY, identifier);
+                    }
+                }               
 
             }, 200);
         });
@@ -2993,20 +3049,23 @@ $(document).ready(function () {
                 var a1 = axisRawMinLong.substring(0, 2);
                 var a2 = axisRawMinLong.substring(2, 4);
                 var afinal = a2 + a1;
+                var afinalSigned = convertHexa2(afinal);
                 afinal = convertHexa2(afinal);
-                afinal = Math.abs(afinal);
-                console.log(afinal, seuilMinAxis, seuilMaxAxis);
+                if(afinal < 0){
+                    afinal = Math.abs(afinal);
+                    console.log(afinal, seuilMinAxis, seuilMaxAxis);
 
-                if (seuilMinAxis < afinal && afinal < seuilMaxAxis) {
-                    var newSignal = signalComposer(axisRawMinLong, "2154", subindexX); //param = response + header for min long
-                    sendSignal(newSignal);
-                    if (subindexY !== "null") {
-                        calibrateMinLat(subindexX, subindexY, identifier);
-                    } else {
-                        resetCalibration(identifier);
+                    if (seuilMinAxis <= afinal && afinal <= seuilMaxAxis) {
+                        $(".realtime_joysticks_val.id" + identifier).find(".raw_min_x").html(afinalSigned);
+                        var newSignal = signalComposer(axisRawMinLong, "2154", subindexX); //param = response + header for min long
+                        sendSignal(newSignal);
+                        if (subindexY !== "null") {
+                            calibrateMinLat(subindexX, subindexY, identifier);
+                        } else {
+                            resetCalibration(identifier);
+                        }
                     }
                 }
-
             }, 200);
         });
     }
@@ -3028,14 +3087,18 @@ $(document).ready(function () {
                 var a1 = axisRawMinLat.substring(0, 2);
                 var a2 = axisRawMinLat.substring(2, 4);
                 var afinal = a2 + a1;
+                var afinalSigned = convertHexa2(afinal);
                 afinal = convertHexa2(afinal);
-                afinal = Math.abs(afinal);
-                console.log(afinal, seuilMinAxis, seuilMaxAxis);
+                if(afinal < 0){
+                    afinal = Math.abs(afinal);
+                    console.log(afinal, seuilMinAxis, seuilMaxAxis);
 
-                if (seuilMinAxis < afinal && afinal < seuilMaxAxis) {
-                    var newSignal = signalComposer(axisRawMinLat, "2154", subindexY); //param = response + header for zero long
-                    sendSignal(newSignal);
-                    calibrateMaxLat(subindexX, subindexY, identifier);
+                    if (seuilMinAxis <= afinal && afinal < seuilMaxAxis) {
+                        $(".realtime_joysticks_val.id" + identifier).find(".raw_min_y").html(afinalSigned);
+                        var newSignal = signalComposer(axisRawMinLat, "2154", subindexY); //param = response + header for zero long
+                        sendSignal(newSignal);
+                        calibrateMaxLat(subindexX, subindexY, identifier);
+                    }
                 }
             }, 200);
         });
@@ -3056,14 +3119,18 @@ $(document).ready(function () {
                 var a1 = axisRawMaxLat.substring(0, 2);
                 var a2 = axisRawMaxLat.substring(2, 4);
                 var afinal = a2 + a1;
+                var afinalSigned = convertHexa2(afinal);
                 afinal = convertHexa2(afinal);
-                afinal = Math.abs(afinal);
-                console.log(afinal, seuilMinAxis, seuilMaxAxis);
+                if(afinal > 0){
+                    afinal = Math.abs(afinal);
+                    console.log(afinal, seuilMinAxis, seuilMaxAxis);
 
-                if (seuilMinAxis < afinal && afinal < seuilMaxAxis) {
-                    var newSignal = signalComposer(axisRawMaxLat, "2254", subindexY); //param = response + header for zero long
-                    sendSignal(newSignal);
-                    calibrateZeroLat(subindexX, subindexY, identifier);
+                    if (seuilMinAxis <= afinal && afinal < seuilMaxAxis) {
+                        $(".realtime_joysticks_val.id" + identifier).find(".raw_max_y").html(afinalSigned);
+                        var newSignal = signalComposer(axisRawMaxLat, "2254", subindexY); //param = response + header for zero long
+                        sendSignal(newSignal);
+                        calibrateZeroLat(subindexX, subindexY, identifier);
+                    }
                 }
             }, 200);
         });
@@ -3084,11 +3151,13 @@ $(document).ready(function () {
                 var a1 = axisRawZeroLat.substring(0, 2);
                 var a2 = axisRawZeroLat.substring(2, 4);
                 var afinal = a2 + a1;
+                var afinalSigned = convertHexa2(afinal);
                 afinal = convertHexa2(afinal);
                 afinal = Math.abs(afinal);
                 console.log(afinal, seuilMinZero, seuilMaxZero);
 
-                if (seuilMinZero < afinal && afinal < seuilMaxZero) {
+                if (seuilMinZero <= afinal && afinal < seuilMaxZero) {
+                    $(".realtime_joysticks_val.id" + identifier).find(".raw_zero_y").html(afinalSigned);
                     var newSignal = signalComposer(axisRawZeroLat, "2054", subindexY); //param = response + header for zero long
                     sendSignal(newSignal);
                     resetCalibration(identifier);
@@ -3123,6 +3192,7 @@ $(document).ready(function () {
         });
     }
 
+    
 
     ////////////////////////////////////////////////////////////////////////////
     //////////////////////VERIFY CALIBRATION////////////////////////////////////
@@ -3234,8 +3304,23 @@ $(document).ready(function () {
     });
     $(".continue_to_finaltest").on('click', function () {
         sendSignal(Cal_post + Cal_dlc + cobID2 + "2f00550101000000");
+        getCalibrationLog();
     });
-
+    
+    function getCalibrationLog(){
+        $("#content_calibration .calibration_test_container .realtime_joysticks_val").each(function(){
+            var symbol_name = $(this).data('symb');
+            var standard_name = $(this).data('standard');
+            
+            $(this).find(".get_val").each(function(){
+                var description = $(this).data('descri').toUpperCase();
+                var result = $(this).html();            
+                calibLog.push({name: symbol_name, standard_name: standard_name, description: description, result: result});
+            });                        
+            
+        });
+        calibLogJSON = JSON.stringify(calibLog);
+    }    
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// PING GET INFO VERSION ////////////////////////////////////////////////////////////////
@@ -4569,7 +4654,7 @@ $(document).ready(function () {
             signal = adaptSignalOmega(signal);
         }
         
-        if(is_hexadecimal(signal) || signal.length <= 72){
+        if(is_hexadecimal(signal) && signal.length <= 72){
             var jsonData = '{"type":"signal", "msg":"' + signal + '"}';
             console.log(jsonData);        
             ws.send(jsonData);

@@ -103,6 +103,7 @@ $saveLogPretest = function ($connexion) {
 //enregistre les log d'un testfinal
 $saveLogFinal = function ($connexion) {
     $jsonlog = $_POST['jsonlog'];
+    $jsoncaliblog = $_POST['jsonCalibLog'];
     $user_sso = $_POST['sso'];
     $pn = $_POST['pn'];
     $serial = $_POST['sn'];
@@ -117,8 +118,9 @@ $saveLogFinal = function ($connexion) {
     $enable_tens = $_POST['enableTens'];
     $enable_freq = $_POST['enableFreq'];
 
-    $stmt = $connexion->prepare("INSERT INTO global_log (json_log, part_number, serial_number, user_sso, role, type, fw_fct_version, fw_calib_version, sw_version, alim_tsui, alim_testbench, enable_tens, enable_freq, date) VALUES (:jsonlog, :partnumber, :serialnumber, :user_sso, :role, :type,:fwfctv, :fwcalibv, :swv, :alimtsui, :alimtestbench, :enabletens, :enablefreq, NOW())");
+    $stmt = $connexion->prepare("INSERT INTO global_log (json_log, json_calib_log, part_number, serial_number, user_sso, role, type, fw_fct_version, fw_calib_version, sw_version, alim_tsui, alim_testbench, enable_tens, enable_freq, date) VALUES (:jsonlog, :jsoncaliblog, :partnumber, :serialnumber, :user_sso, :role, :type,:fwfctv, :fwcalibv, :swv, :alimtsui, :alimtestbench, :enabletens, :enablefreq, NOW())");
     $stmt->bindParam(':jsonlog', $jsonlog);
+    $stmt->bindParam(':jsoncaliblog', $jsoncaliblog);
     $stmt->bindParam(':partnumber', $pn);
     $stmt->bindParam(':serialnumber', $serial);
     $stmt->bindParam(':user_sso', $user_sso);

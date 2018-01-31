@@ -1141,18 +1141,17 @@ and open the template in the editor.
   display: inline-block;
   vertical-align: top;
   margin-left: -19px;
-  height: 128px;
   margin: 10px;
   position: relative;
 }
-/* line 64, ../sass/_calibration.scss */
+/* line 63, ../sass/_calibration.scss */
 #content_calibration .realtime_joysticks_val .title_verify {
   position: absolute;
   font-weight: bold;
   font-style: italic;
   top: -21px;
 }
-/* line 70, ../sass/_calibration.scss */
+/* line 69, ../sass/_calibration.scss */
 #content_calibration .realtime_joysticks_val.blink_me {
   animation: blinker 1s linear infinite;
 }
@@ -1162,27 +1161,64 @@ and open the template in the editor.
     background: white;
   }
 }
-/* line 80, ../sass/_calibration.scss */
+/* line 79, ../sass/_calibration.scss */
 #content_calibration .realtime_joysticks_val .current_joystick {
   font-weight: bold;
 }
-/* line 83, ../sass/_calibration.scss */
-#content_calibration .realtime_joysticks_val .bloc_left_joy {
-  text-align: left;
+/* line 82, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_pourcentage {
   display: inline-block;
   vertical-align: top;
-  margin-right: 10px;
+  width: 45%;
   border-right: 1px solid black;
+}
+/* line 87, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_pourcentage .title {
+  text-align: left;
+  margin-bottom: 10px;
+  color: #3b73b9;
+  font-style: italic;
+}
+/* line 93, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_pourcentage .bloc_left_joy {
+  text-align: left;
+  margin-right: 10px;
+  width: 100px;
+  margin-bottom: 5px;
+}
+/* line 99, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_pourcentage .bloc_right_joy {
+  text-align: left;
   width: 100px;
 }
-/* line 91, ../sass/_calibration.scss */
-#content_calibration .realtime_joysticks_val .bloc_right_joy {
-  text-align: left;
+/* line 104, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_raw_data {
   display: inline-block;
   vertical-align: top;
+  width: 40%;
+  margin-left: 6%;
+  color: #515151;
+}
+/* line 110, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_raw_data .title {
+  text-align: left;
+  margin-bottom: 10px;
+  color: #3b73b9;
+  font-style: italic;
+}
+/* line 116, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_raw_data .bloc_left_joy {
+  text-align: left;
+  margin-right: 10px;
+  width: 100px;
+  margin-bottom: 5px;
+}
+/* line 122, ../sass/_calibration.scss */
+#content_calibration .realtime_joysticks_val .bloc_raw_data .bloc_right_joy {
+  text-align: left;
   width: 100px;
 }
-/* line 98, ../sass/_calibration.scss */
+/* line 128, ../sass/_calibration.scss */
 #content_calibration .statut_calibration_verif {
   border: 2px solid #3b73b9;
   padding: 15px;
@@ -1192,33 +1228,33 @@ and open the template in the editor.
   margin-left: auto;
   margin-right: auto;
 }
-/* line 106, ../sass/_calibration.scss */
+/* line 136, ../sass/_calibration.scss */
 #content_calibration .statut_calibration_verif .line_validate_calib {
   margin-bottom: 20px;
 }
-/* line 108, ../sass/_calibration.scss */
+/* line 138, ../sass/_calibration.scss */
 #content_calibration .statut_calibration_verif .line_validate_calib:last-child {
   margin-bottom: 0px;
 }
-/* line 111, ../sass/_calibration.scss */
+/* line 141, ../sass/_calibration.scss */
 #content_calibration .statut_calibration_verif .line_validate_calib .check_calib {
   display: inline-block;
   vertical-align: middle;
   width: 25px;
   margin-right: 15px;
 }
-/* line 119, ../sass/_calibration.scss */
+/* line 149, ../sass/_calibration.scss */
 #content_calibration .calibration_test_container {
   text-align: center;
   margin-top: 20px;
   margin-bottom: 30px;
 }
-/* line 124, ../sass/_calibration.scss */
+/* line 154, ../sass/_calibration.scss */
 #content_calibration .calibration_zone_container {
   text-align: center;
   margin-top: 30px;
 }
-/* line 128, ../sass/_calibration.scss */
+/* line 158, ../sass/_calibration.scss */
 #content_calibration .bloc_calibrate {
   display: inline-block;
   border: 1px solid black;
@@ -1228,7 +1264,26 @@ and open the template in the editor.
   width: 280px;
   vertical-align: top;
 }
-/* line 137, ../sass/_calibration.scss */
+/* line 166, ../sass/_calibration.scss */
+#content_calibration .bloc_calibrate .bloc_gestion_calib {
+  width: 50%;
+  display: inline-block;
+  vertical-align: middle;
+}
+/* line 171, ../sass/_calibration.scss */
+#content_calibration .bloc_calibrate .img_calib {
+  width: 40%;
+  display: inline-block;
+  vertical-align: middle;
+  height: 70px;
+  margin-left: 12px;
+}
+/* line 177, ../sass/_calibration.scss */
+#content_calibration .bloc_calibrate .img_calib img {
+  width: 100%;
+  height: auto;
+}
+/* line 183, ../sass/_calibration.scss */
 #content_calibration .validate_calib {
   cursor: pointer;
   background: #3b73b9;
@@ -1239,18 +1294,18 @@ and open the template in the editor.
   margin-top: 10px;
   border-radius: 5px;
 }
-/* line 147, ../sass/_calibration.scss */
+/* line 193, ../sass/_calibration.scss */
 #content_calibration .title_jauge {
   font-weight: bold;
   font-size: 18px;
   margin-bottom: 10px;
   color: #3b73b9;
 }
-/* line 153, ../sass/_calibration.scss */
+/* line 199, ../sass/_calibration.scss */
 #content_calibration .status_calib {
   margin-bottom: 10px;
 }
-/* line 156, ../sass/_calibration.scss */
+/* line 202, ../sass/_calibration.scss */
 #content_calibration .eprom_protect {
   width: 199px;
   border: 2px solid #3b73b9;
@@ -1259,7 +1314,7 @@ and open the template in the editor.
   display: inline-block;
   vertical-align: top;
 }
-/* line 163, ../sass/_calibration.scss */
+/* line 209, ../sass/_calibration.scss */
 #content_calibration .eprom_protect .img_eprom {
   width: 35px;
   height: auto;
@@ -1267,12 +1322,12 @@ and open the template in the editor.
   vertical-align: middle;
   margin-right: 10px;
 }
-/* line 170, ../sass/_calibration.scss */
+/* line 216, ../sass/_calibration.scss */
 #content_calibration .eprom_protect .txt_eprom {
   display: inline-block;
   vertical-align: middle;
 }
-/* line 174, ../sass/_calibration.scss */
+/* line 220, ../sass/_calibration.scss */
 #content_calibration .eprom_protect .bt_eprom {
   border-radius: 5px;
   background: #c4c4c4;
