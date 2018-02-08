@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(document).ready(function (){
 
     var ws = new WebSocket("ws://localhost:8100");
     var dictionary = {};
@@ -14,12 +14,13 @@ $(document).ready(function () {
 
 
     //remplissage des zones toolbox
-    var zone0 = $("#content_toolbox .diag_inge .zone_0");
-    var zone1 = $("#content_toolbox .diag_inge .zone_1");
-    var zone2 = $("#content_toolbox .diag_inge .zone_2");
+    var zone0 = $("#content_toolbox .diag_inge .zone_0 .content");
+    var zone1 = $("#content_toolbox .diag_inge .zone_1 .content");
+    var zone2 = $("#content_toolbox .diag_inge .zone_2 .content");
     var zone3 = $("#content_toolbox .diag_inge .zone_3 .content");
 
     var intervalSpe;
+    var intervalBAD;
 
     var displayContainer = $("#content_toolbox .diag_inge .display_container .content");
     var buzzerContainer = $("#content_toolbox .diag_inge .buzzer_container .content");
@@ -35,6 +36,7 @@ $(document).ready(function () {
     var safetySRTL = $("#content_toolbox .diag_inge .srtl_container .safety_srtl");
     var enableSRTL = $("#content_toolbox .diag_inge .srtl_container .enable_srtl");
     var hasSRTL;
+    var counterDisplayFreqTens = 0;
     
     var latSwitchCtn = $("#content_toolbox .latSwitch");
     var autoposDRCtn = $("#content_toolbox .autoposDR")
@@ -76,13 +78,13 @@ $(document).ready(function () {
     var typeChoice = "";
     var tstName = "";
     var sectionRepair = "";
-    var joystickNumber;
+    var switchPosNumber;
     var nodeID;
     var cobID1;
     var cobID2;
-    var FWfctV = "";
-    var FWcalibV = "";
-    var SWv = "";
+    var FWfctV = "-";
+    var FWcalibV = "-";
+    var SWv = "-";
 
     var activeSearchHistoryResult = {};
 
@@ -120,10 +122,11 @@ $(document).ready(function () {
     var waitingReleaseValue;
     var pressValueContinue;
     var releaseValueContinue;
+    var hardwareValidation;
     var validateTest = 0;
     var errorTestFinal = 0;
 
-    var waitingEnable;
+    var waitingEnableAndSafety;
     var indexFinal;
     var maxIndexFinal;
     var intervalGlobal;
@@ -139,12 +142,21 @@ $(document).ready(function () {
     var currStandardName;
     var enableF = 0;
     var enableT = 0;
+    var safetyT = 0;
+    var safetyF = 0;
     var isEnable;
+    var isSafety;
     var isCdrh;
     var currEnableT = 0;
     var currEnableF = 0;
+    var currSafetyT = 0;
+    var currSafetyF = 0;
     var currGlobalVoltage = 0;
     var currTsuiVoltage = 0;
+    var initial_enable_tens = 0;
+    var initial_enable_freq = 0;
+    var initial_safety_tens = 0;
+    var initial_safety_freq = 0;
 
     //Spybox
     var spyBox = $("#dialog-spybox .content_line");
@@ -258,7 +270,7 @@ $(document).ready(function () {
                                                 if (data[iter].is_led == "1") {
                                                     ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
                                                 } else if (data[iter].is_led == "2") {
-                                                    ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
+                                                    ledContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='led_emergency'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>led</span><span class='td'>" + data[iter].description + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td test_bt' data-name='" + data[iter].description + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-function='led_emergency' data-canid='" + data[iter].can_id + "'>TEST</span></div>");
                                                 }
 
                                                 buttonContainer.append("<div class='line id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td symbol_name'>" + data[iter].symbol_name + "</span><span class='td'>" + data[iter].type + "</span><span class='td'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><span class='td totest'>Not tested</span></div>");
@@ -279,6 +291,7 @@ $(document).ready(function () {
                                             var description = $(this).data('name');
                                             var onSignal = $(this).data('on');
                                             var offSignal = $(this).data('off');
+                                            var functionTest = $(this).data('function');
                                             var postSignal = "002400806d68d7551407f09b861e3aad000549a844080000";
                                             var signalStart = postSignal + onSignal;
                                             var signalStop = postSignal + offSignal;
@@ -294,10 +307,22 @@ $(document).ready(function () {
 
 
                                             testPoppin.find(".start_bt").on('click', function () {
-                                                sendSignal(signalStart);
+                                                if(functionTest == "led_emergency" && globalName == "ELEGANCE"){
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300153000000");
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300245000000");
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300354000000");
+                                                }else{
+                                                    sendSignal(signalStart);
+                                                }
                                             });
                                             testPoppin.find(".stop_bt").on('click', function () {
-                                                sendSignal(signalStop);
+                                                if(functionTest == "led_emergency" && globalName == "ELEGANCE"){
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300144000000");
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300257000000");
+                                                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F0030034E000000");
+                                                }else{
+                                                    sendSignal(signalStop);
+                                                }
                                             });
                                             testPoppin.find(".yes_bt").on('click', function () {
                                                 $(".result_array").css("opacity", "1");
@@ -315,6 +340,7 @@ $(document).ready(function () {
                                                 _this.css('background-color', 'red');
                                                 _this.html('TEST FAIL');
                                                 _this.parent().addClass("tested");
+                                                _this.parent().removeClass("testok");
                                             });
 
 
@@ -465,7 +491,7 @@ $(document).ready(function () {
                                                             +"</div>"
                                                             +"<div class='img_calib'><img src='images/" + data[iter].photo_link + "'></div>"
                                                             + "</div>");
-                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
+                                                    joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
                                                             + "<div class='joystick_val_info'>"
                                                             + "<div class='title_verify'>" + data[iter].description + "</div>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
@@ -501,29 +527,50 @@ $(document).ready(function () {
                                                     break;
                                                 case "mushroom":
                                                     joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + " mushroom' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
-                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                            + "<div class='calibrate_bt'>"
-                                                            + "<button class='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                            + "<div class='calibrate_tool hidden'>"
-                                                            + "<div class='status_calib'></div>"
-                                                            + "<div class='action_calib'></div>"
-                                                            + "<div class='validate_calib'>Validate</div>"
-                                                            + "</div>"
-                                                            + "</div>"
-                                                            + "</div>");
+                                                            +"<div class='bloc_gestion_calib'>"
+                                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                                + "<div class='calibrate_bt'>"
+                                                                + "<button dclass='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                                + "<div class='calibrate_tool hidden'>"
+                                                                + "<div class='status_calib'></div>"
+                                                                + "<div class='action_calib'></div>"
+                                                                + "<div class='validate_calib'>Validate</div>"
+                                                                + "</div>"
+                                                                + "</div>"
+                                                            +"</div>"
+                                                            +"<div class='img_calib'><img src='images/" + data[iter].photo_link + "'></div>"
+                                                            + "</div>");                                                           
+                                                            
                                                     joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
+                                                            + "<div class='title_verify'>" + data[iter].description + "</div>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
-                                                            + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                            + "<div class='bloc_left_joy'>"
-                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
+                                                            + "<div class='bloc_pourcentage'>"
+                                                                + "<div class='title'>Final Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
-                                                            + "<div class='bloc_right_joy'>"
-                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "<div class='bloc_raw_data'>"
+                                                                + "<div class='title'>Raw Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                               + "<span class='text_config'>Zero X : </span><span class='raw_zero_x get_val'  data-descri='zero_x'>-</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='raw_min_x get_val'  data-descri='left'>-</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='raw_max_x get_val'  data-descri='right'>-</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Zero Y : </span><span class='raw_zero_y get_val' data-descri='zero_y'>-</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='raw_min_y get_val' data-descri='bottom'>-</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='raw_max_y get_val' data-descri='top'>-</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
@@ -672,17 +719,20 @@ $(document).ready(function () {
                             url: 'php/api.php?function=get_tsui&param1=' + familyChoice + '&param2=' + modelChoice + '&param3=' + typeChoice,
                             type: 'GET',
                             dataType: 'JSON',
-                            success: function (data, statut) {
+                            success: function (data, statut) {                                
                                 if (data.length == 0) {
                                     alert("No result found with this part number." + familyChoice)
                                 } else {
                                     familyName = data[0].name;
                                     var photo = data[0].photo_link;
                                     family_id = data[0].family;
-                                    joystickNumber = data[0].joystick_number;
+                                    switchPosNumber = data[0].switch_pos_number;
                                     globalName = data[0].family_name;
                                     modelName = data[0].model;
                                     typeChoice = data[0].type;
+                                    
+                                    setInitialDisplayByModel(globalName, modelName, typeChoice);
+                                    
                                     $("#content_toolbox .title_main").html("Toolbox - "+globalName+" "+modelName);
                                     $(".actual_node_id").html(nodeID);
                                     $(".photo_tsui").attr('src', 'images/' + photo);
@@ -712,13 +762,7 @@ $(document).ready(function () {
                                     dataType: 'JSON',
                                     success: function (data, statut) {
                                         dictionary = data;
-                                        var len = data.length;
-                                        $(".diag_inge .diag_component").each(function () {
-                                            $(this).remove();
-                                        });
-                                        $(".joystick_container_new").empty();
-                                        $(".calibration_zone_container").empty();
-                                        $(".calibration_test_container").empty();
+                                        var len = data.length;                                                                            
                                         for (var iter = 0; iter < len; iter++) {
                                             switch (data[iter].zone) {
                                                 case "0":
@@ -727,20 +771,22 @@ $(document).ready(function () {
                                                     }  else if (data[iter].is_led == "2") {
                                                         zone0.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch special on'>O:<img src='images/switch_off.png'></span></div></div>");
                                                     }  else {
-                                                        zone0.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='type'>" + data[iter].type + "</span><span class='descri'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span></div></div>");
+                                                        zone0.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri' style='width: 230px;'>" + data[iter].description + "</span></div></div>");
                                                     }
-                                                    zone0.removeClass("hidden");
+                                                    zone0.parent().removeClass("hidden");
                                                     break;
                                                 case "1":
                                                     if (data[iter].is_led == "1") {
                                                         zone1.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-dim='" + data[iter].dim_signal + "' data-flash='" + data[iter].flash_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch on'>O:<img src='images/switch_off.png'></span><span class='switch dim'>D:<img src='images/switch_off.png'></span><span class='switch flash'>F:<img src='images/switch_off.png'></span></div></div>");
                                                     } else if (data[iter].is_led == "2") {
                                                         zone1.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch special on'>O:<img src='images/switch_off.png'></span></div></div>");
-                                                    } 
-                                                    else {
-                                                        zone1.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='type'>" + data[iter].type + "</span><span class='descri'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span></div></div>");
+                                                    } else if (data[iter].is_led == "2") {
+                                                        zone1.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch special on'>O:<img src='images/switch_off.png'></span></div></div>");
                                                     }
-                                                    zone1.removeClass("hidden");
+                                                    else {
+                                                        zone1.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri' style='width: 230px;'>" + data[iter].description + "</span></div></div>");
+                                                    }
+                                                    zone1.parent().removeClass("hidden");
                                                     break;
                                                 case "2":
                                                     if (data[iter].is_led == "1") {
@@ -748,15 +794,17 @@ $(document).ready(function () {
                                                     } else if (data[iter].is_led == "2") {
                                                         zone2.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch special on'>O:<img src='images/switch_off.png'></span></div></div>");
                                                     } else {
-                                                        zone2.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='type'>" + data[iter].type + "</span><span class='descri'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span></div></div>");
+                                                        zone2.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri' style='width: 230px;'>" + data[iter].description + "</span></div></div>");
                                                     }
-                                                    zone2.removeClass("hidden");
+                                                    zone2.parent().removeClass("hidden");
                                                     break;
                                                 case "3":
                                                     if (data[iter].is_led == "1") {
                                                         zone3.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-dim='" + data[iter].dim_signal + "' data-flash='" + data[iter].flash_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch on'>O:<img src='images/switch_off.png'></span><span class='switch dim'>D:<img src='images/switch_off.png'></span><span class='switch flash'>F:<img src='images/switch_off.png'></span></div></div>");
+                                                        zone3.parent().removeClass("hidden");
                                                     } else {
-                                                        zone3.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='type'>" + data[iter].type + "</span><span class='descri'>" + data[iter].description + "</span><span class='td press'>" + data[iter].pressed_val + "</span><span class='td rel'>" + data[iter].released_val + "</span></div></div>");
+                                                        zone3.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri' style='width: 230px;'>" + data[iter].description + "</span></div></div>");
+                                                        zone3.parent().removeClass("hidden");
                                                     }
                                                                     
                                                     break;
@@ -765,7 +813,7 @@ $(document).ready(function () {
                                                 case "buzzer":
                                                     buzzerContainer.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "'><div class='info_component'><span class='descri'>" + data[iter].description + "</span><span class='switch on'>O:<img src='images/switch_off.png'></span></div></div>");
                                                     buzzerContainer.parent().removeClass("hidden");
-                                                    break;
+                                                    break; 
                                                 case "display":
                                                     displayContainer.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "' data-on='" + data[iter].on_signal + "' data-off='" + data[iter].off_signal + "' data-dim='" + data[iter].dim_signal + "' data-flash='" + data[iter].flash_signal + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span><span class='switch on'>O:<img src='images/switch_off.png'></span><span class='switch dim'>D:<img src='images/switch_off.png'></span><span class='switch flash'>F:<img src='images/switch_off.png'></span></div></div>");
                                                     displayContainer.parent().removeClass("hidden");
@@ -822,30 +870,51 @@ $(document).ready(function () {
                                                     break;
                                                 case "mushroom":
                                                     joystickContainerNew.append("<div class='new_joystick' id='id" + data[iter].id + "'><div class='name'>" + data[iter].description + "</div><div class='area_visual'><div class='area_etalon'><img class='cursor' src='images/cross_red.png'></div></div><div class='values'>x : <span class='x_val'></span> y : <span class='y_val'></span></div></div>");
-                                                    joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + " mushroom'>"
-                                                            + "<div class='title_jauge'>" + data[iter].description + "</div>"
-                                                            + "<div class='calibrate_bt'>"
-                                                            + "<button class='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
-                                                            + "<div class='calibrate_tool hidden'>"
-                                                            + "<div class='status_calib'></div>"
-                                                            + "<div class='action_calib'></div>"
-                                                            + "<div class='validate_calib'>Validate</div>"
-                                                            + "</div>"
-                                                            + "</div>"
-                                                            + "</div>");
+                                                    joystickCalibrationContainer.append("<div class='bloc_calibrate id" + data[iter].id + " mushroom' data-minaxis='" + data[iter].threshold_min_axis + "' data-maxaxis='" + data[iter].threshold_max_axis + "' data-minzero='" + data[iter].threshold_min_zero + "' data-maxzero='" + data[iter].threshold_max_zero + "'>"
+                                                            +"<div class='bloc_gestion_calib'>"
+                                                                + "<div class='title_jauge'>" + data[iter].description + "</div>"
+                                                                + "<div class='calibrate_bt'>"
+                                                                + "<button dclass='mushroom' data-mush='" + data[iter].calib_subindex_x + "' data-id='" + data[iter].id + "'>Calibrate</button>"
+                                                                + "<div class='calibrate_tool hidden'>"
+                                                                + "<div class='status_calib'></div>"
+                                                                + "<div class='action_calib'></div>"
+                                                                + "<div class='validate_calib'>Validate</div>"
+                                                                + "</div>"
+                                                                + "</div>"
+                                                            +"</div>"
+                                                            +"<div class='img_calib'><img src='images/" + data[iter].photo_link + "'></div>"
+                                                            + "</div>");                                                           
+                                                            
                                                     joystickVerifyContainer.append("<div class='realtime_joysticks_val id" + data[iter].id + "' data-symb='" + data[iter].symbol_name + "' data-standard='" + data[iter].standard_name + "'>"
                                                             + "<div class='joystick_val_info'>"
+                                                            + "<div class='title_verify'>" + data[iter].description + "</div>"
                                                             + "<button class='verify_calibration id" + data[iter].id + "' data-long='" + data[iter].calib_subindex_x + "' data-lat='" + data[iter].calib_subindex_y + "' data-id='" + data[iter].id + "'>Verify</button> "
-                                                            + "<button class='stop_calibration_verif id" + data[iter].id + "' data-id='" + data[iter].id + "'>Stop</button><br><br>"
-                                                            + "<div class='bloc_left_joy'>"
-                                                            + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                            + "<button class='stop_calibration_verif id" + data[iter].id + " hidden' data-id='" + data[iter].id + "'>Stop</button><br><br>"
+                                                            + "<div class='bloc_pourcentage'>"
+                                                                + "<div class='title'>Final Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                                + "<span class='text_config'>X : </span><span class='x_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='minx_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='maxx_value_joy'>0</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
-                                                            + "<div class='bloc_right_joy'>"
-                                                            + "<span class='text_config'>Y : </span><span class='y_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Min Y : </span><span class='miny_value_joy'>0</span><br>"
-                                                            + "<span class='text_config'>Max Y : </span><span class='maxy_value_joy'>0</span>"
+                                                            + "<div class='bloc_raw_data'>"
+                                                                + "<div class='title'>Raw Values</div>"
+                                                                + "<div class='bloc_left_joy'>"
+                                                               + "<span class='text_config'>Zero X : </span><span class='raw_zero_x get_val'  data-descri='zero_x'>-</span><br>"
+                                                                + "<span class='text_config'>Min X : </span><span class='raw_min_x get_val'  data-descri='left'>-</span><br>"
+                                                                + "<span class='text_config'>Max X : </span><span class='raw_max_x get_val'  data-descri='right'>-</span><br>"
+                                                                + "</div>"
+                                                                + "<div class='bloc_right_joy'>"
+                                                                + "<span class='text_config'>Zero Y : </span><span class='raw_zero_y get_val' data-descri='zero_y'>-</span><br>"
+                                                                + "<span class='text_config'>Min Y : </span><span class='raw_min_y get_val' data-descri='bottom'>-</span><br>"
+                                                                + "<span class='text_config'>Max Y : </span><span class='raw_max_y get_val' data-descri='top'>-</span>"
+                                                                + "</div>"                                                            
                                                             + "</div>"
                                                             + "</div>"
                                                             + "</div>");
@@ -853,28 +922,15 @@ $(document).ready(function () {
                                             }
                                             if (data[iter].is_safety == "1") {
                                                 safetyContainer.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span></div></div>");
-                                                
+                                                safetyContainer.removeClass("hidden");
                                             }
                                             if (data[iter].is_enable == "1") {
                                                 enableContainer.append("<div class='diag_component id" + data[iter].id + "' data-id='" + data[iter].id + "' data-name='" + data[iter].symbol_name + "' data-function='" + data[iter].type + "'><span class='td photo_piece'><img src='images/" + data[iter].photo_link + "'></span><div class='info_component'><span class='symbol'>" + data[iter].symbol_name + "</span><span class='descri'>" + data[iter].description + "</span></div></div>");
-                                                
+                                                enableContainer.removeClass("hidden");
                                             }
 
                                         }
-                                        if (globalName == "OMEGA") {
-                                            $(".switch.dim").addClass("hidden");
-                                            $(".srtl_container").addClass("hidden");
-                                            $(".emergency_container").addClass("hidden");
-                                            $(".nodeid_container").addClass("hidden");
-                                            $(".start_node_bt").addClass("hidden");
-                                            $(".stop_node_bt").addClass("hidden");
-                                            $(".bt_diag_mode").removeClass("hidden");
-                                            if(modelName == "TSSC" ){
-                                                $(".hw_signals_container.tssc").removeClass("hidden");
-                                            }else{
-                                                $(".hw_signals_container.sbsh").removeClass("hidden");
-                                            }
-                                        }
+                                        
                                         diagInge.find(".switch").on('click', function () {
                                             var postSignal = "002400806d68d7551407f09b861e3aad000549a844";
 
@@ -942,9 +998,10 @@ $(document).ready(function () {
                                             ;
                                             startVerifyCalibration(subindexX, subindexY, identifier);
                                         });
+                                        
                                         $(".stop_calibration_verif").on('click', function () {
                                             var identifier = $(this).data('id');
-                                            stopVerifyCalibration();
+                                            stopVerifyCalibration(identifier);
                                         });
                                     },
                                     error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -1242,18 +1299,50 @@ $(document).ready(function () {
                     if (waitingAction != "") {
                         switch (waitingAction) {
                             case "BUTTON":
-                                if (waitingPressValue == canData) {
+                                if (waitingPressValue == canData) {                                   
                                     pressValueContinue = 1;
-
                                 }
-                                if (waitingReleaseValue == canData) {
-                                    if (waitingEnable == 1) {
-                                        console.log("on detecte le cas rel du bouton enable et on lance la fct")
-                                        setEnableValues();
-                                    }
+                                if (waitingReleaseValue == canData) {                                    
                                     releaseValueContinue = 1;
                                 }
                                 if (pressValueContinue == 1 && releaseValueContinue == 1) {
+                                    validateTest = 1;
+                                    waitingAction = "";
+                                }
+                                break;
+                            case "ENABLE":
+                                if (waitingPressValue == canData) {
+                                    if (waitingEnableAndSafety == 1) {
+                                        console.log("on detecte le cas rel du bouton enable et on lance la fct")
+                                        setTimeout(function(){
+                                            setEnableAndSafetyValues("enable");
+                                        }, 50)                                        
+                                    }
+                                    pressValueContinue = 1;
+                                }
+                                if (waitingReleaseValue == canData) {                                    
+                                    releaseValueContinue = 1;
+                                }
+                                if (pressValueContinue == 1 && releaseValueContinue == 1 && hardwareValidation == 1) {
+                                    validateTest = 1;
+                                    waitingAction = "";
+                                }
+                                break;
+                            case "SAFETY":
+                                if (waitingPressValue == canData) {
+                                    if (waitingEnableAndSafety == 1) {
+                                        console.log("on detecte le cas rel du bouton enable et on lance la fct")
+                                        setTimeout(function(){
+                                            setEnableAndSafetyValues("safety");
+                                        }, 50)                                        
+                                    }
+                                    pressValueContinue = 1;
+
+                                }
+                                if (waitingReleaseValue == canData) {                                    
+                                    releaseValueContinue = 1;
+                                }
+                                if (pressValueContinue == 1 && releaseValueContinue == 1 && hardwareValidation == 1) {
                                     validateTest = 1;
                                     waitingAction = "";
                                 }
@@ -1364,12 +1453,15 @@ $(document).ready(function () {
                     safetyVoltage = convertHexaPic(safetyVoltage) / 51 / 0.138;
                     enableFrequency = convertHexaPic(enableFrequency);
                     enableVoltage = convertHexaPic(enableVoltage) / 51 / 0.138;
-                    globalVoltage = convertHexaPic(globalVoltage) / 51 / 0.1375;
-                    tsuiVoltage = convertHexaPic(tsuiVoltage) / 51 / 0.1375;
+                    globalVoltage = (convertHexaPic(globalVoltage) + 3) / 51 / 0.1375;
+                    tsuiVoltage = (convertHexaPic(tsuiVoltage ) +3) / 51 / 0.1375;
 
                     hasSRTL = has_SRTL;
                     currEnableT = enableVoltage;
                     currEnableF = enableFrequency;
+                    currSafetyT = safetyVoltage;
+                    currSafetyF = safetyFrequency;
+                    
                     currGlobalVoltage = globalVoltage;
                     currTsuiVoltage = tsuiVoltage;
 
@@ -1452,10 +1544,28 @@ $(document).ready(function () {
                     }
                 }
                 break;
+            case "BAD_CHECK":
+                var message = JSON.parse(event.data);
+                console.log(event.data);
+                if (message.type == "from_GW") {
+                    var canId = message.canId;
+                    var canData = message.canData;
+                    if (canId == cobID1 && canData.substring(0,8) == "4f006003") {                        
+                        var result = canData.substring(8, 10);
+                        if(result == "00"){
+                            $(".bad_calibration .position_result span").html("RELEASED");
+                        }else if(result == "40"){
+                            $(".bad_calibration .position_result span").html("PRESSED");
+                        }
+
+                    }
+                }
+                break;
             case "TOOLBOX":
                 var message = JSON.parse(event.data);
                 console.log(event.data);
                 if (message.type == "from_pic") {
+                    counterDisplayFreqTens++;
                     
                     if(message.typeMsg == "E"){
                         var safetyFrequency = message.slf;
@@ -1471,18 +1581,23 @@ $(document).ready(function () {
                         safetyVoltage = convertHexaPic(safetyVoltage) / 51 / 0.138;
                         enableFrequency = convertHexaPic(enableFrequency);
                         enableVoltage = convertHexaPic(enableVoltage) / 51 / 0.138;
-                        globalVoltage = convertHexaPic(globalVoltage) / 51 / 0.1375;
-                        tsuiVoltage = convertHexaPic(tsuiVoltage) / 51 / 0.1375;
+                        globalVoltage = (convertHexaPic(globalVoltage)+3) / 51 / 0.1375;
+                        tsuiVoltage = (convertHexaPic(tsuiVoltage)+3) / 51 / 0.1375;
                         hasSRTL = has_SRTL;
+                        
+                        if(counterDisplayFreqTens == 20){
+                            safetyFreqContainer.html(safetyFrequency);
+                            safetyVoltContainer.html(safetyVoltage.toFixed(2));
+                            enableFreqContainer.html(enableFrequency);
+                            enableVoltContainer.html(enableVoltage.toFixed(2));
+                            supplyContainer.html(globalVoltage.toFixed(2) + " V");
 
-                        safetyFreqContainer.html(safetyFrequency);
-                        safetyVoltContainer.html(safetyVoltage.toFixed(2));
-                        enableFreqContainer.html(enableFrequency);
-                        enableVoltContainer.html(enableVoltage.toFixed(2));
-                        supplyContainer.html(globalVoltage.toFixed(2) + " V");
-
-                        safetySRTL.html(srtl.substring(0, 1));
-                        enableSRTL.html(srtl.substring(1, 2));
+                            safetySRTL.html(srtl.substring(0, 1));
+                            enableSRTL.html(srtl.substring(1, 2));
+                            
+                            counterDisplayFreqTens = 0;
+                        }
+                        
                     }else if(message.typeMsg == "T"){
                         var seuil = 22;
                         var latSwitch = message.latSwitch;
@@ -1497,6 +1612,7 @@ $(document).ready(function () {
                         sciFRTL = convertHexaPic(sciFRTL) / 51 / 0.138;
                         sciLAT = convertHexaPic(sciLAT) / 51 / 0.138;
                         
+                        
                         latSwitchCtn.find(".value").html(latSwitch.toFixed(2)+ " V");
                         if(latSwitch > seuil){latSwitchCtn.find(".voyant img").attr('src', 'images/voyant_on.png')}else{latSwitchCtn.find(".voyant img").attr('src', 'images/voyant_off.png')};
                         autoposDRCtn.find(".value").html(autoposDR.toFixed(2)+ " V");
@@ -1506,7 +1622,8 @@ $(document).ready(function () {
                         sciFRTLCtn.find(".value").html(sciFRTL.toFixed(2)+ " V");
                         if(sciFRTL > seuil){sciFRTLCtn.find(".voyant img").attr('src', 'images/voyant_on.png')}else{sciFRTLCtn.find(".voyant img").attr('src', 'images/voyant_off.png')};
                         sciLATCtn.find(".value").html(sciLAT.toFixed(2)+ " V");
-                        if(sciLAT > seuil){sciLATCtn.find(".voyant img").attr('src', 'images/voyant_on.png')}else{sciLATCtn.find(".voyant img").attr('src', 'images/voyant_off.png')};
+                        if(sciLAT > seuil){sciLATCtn.find(".voyant img").attr('src', 'images/voyant_on.png')}else{sciLATCtn.find(".voyant img").attr('src', 'images/voyant_off.png')};                        
+
                     
                     }else if(message.typeMsg == "S"){  
                         var seuil = 22;
@@ -1824,9 +1941,10 @@ $(document).ready(function () {
                     } else {
                         console.log("do nothing..")
                     }
+                    $(".input_commentary").val("");
                 } else {
                     $(".input_commentary").val(data[0].commentary);
-                    if (confirm('SN already exist. Do you want to check his log history ?')) {
+                    if (confirm('SN already exists. Do you want to check his log history ?')) {
                         searchLogField("", serialNumber, "")
                     } else {
                         // Do nothing!
@@ -1873,18 +1991,13 @@ $(document).ready(function () {
                 cobID1 = addHexVal("00000580", nodeID);
                 cobID2 = addHexVal("00000600", nodeID);
                 sendSignal(startNodeMsg);
-            },400)
-            
-            $(".start_elegance_bt").removeClass("hidden");
-            switch (modelName) {
-                case "SMARTBOX" :
-                    if (typeChoice == "AGILA") {
-                        $(".start_agila_bt").removeClass("hidden");
-                    }
-                    break;
-                default:
-                    break;
-            }
+                if(typeChoice == "AGILA"){
+                    setTimeout(function(){
+                        var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                        sendSignal(sign);
+                    },100)                    
+                }
+            },400);  
             
         } else if (family === "OMEGA") {
             resetMasterTSSC = "002400806d68d7551407f09b861e3aad000549a8440800001FC20F000E00000000000000";
@@ -1916,7 +2029,162 @@ $(document).ready(function () {
 
         }
     }
-
+    
+    function setInitialDisplayByModel(globalName, modelName, typeChoice){        
+        
+        $("#content_home .information").addClass("hidden");
+        $("#content_home .information_diag").addClass("hidden");
+        $("#content_home .commentary_bloc").addClass("hidden");        
+        $("#content_home .information_finaltest").addClass("hidden");
+        $(".head_userinfo").addClass("hidden");
+        $("#content_homeE .information").addClass("hidden");
+        
+        zone0.parent().addClass("hidden");
+        zone1.parent().addClass("hidden");
+        zone2.parent().addClass("hidden");
+        zone3.parent().addClass("hidden");
+        displayContainer.parent().addClass("hidden");
+        
+        $(".switch.dim").addClass("hidden");
+        $(".srtl_container").addClass("hidden");
+        $(".buzzer_container").addClass("hidden");
+        $(".display_container").addClass("hidden");
+        $(".safety_container").addClass("hidden");
+        $(".enable_container").addClass("hidden");        
+        $(".emergency_container").addClass("hidden");  
+        $(".hw_signals_container.tssc").addClass("hidden"); 
+        $(".hw_signals_container.sbsh").addClass("hidden"); 
+        $(".nodeid_container").addClass("hidden");
+        $(".bt_diag_mode").addClass("hidden");   
+        
+        $(".safety_container .name_container").html("SAFETY LOOP");
+        $(".enable_container .state").removeClass("hidden");
+        $(".enable_container .values_freq_volt").removeClass("hidden");
+        $(".safety_container .state").removeClass("hidden");
+        $(".safety_container .values_freq_volt").removeClass("hidden");
+        
+        $(".start_node_bt").addClass("hidden");
+        $(".stop_node_bt").addClass("hidden");
+        $(".display_all_bt").addClass("hidden");
+        $(".stop_all_bt").addClass("hidden");
+        $(".start_elegance_bt").addClass("hidden");  
+        $(".start_agila_bt").addClass("hidden"); 
+        $(".tsui_restart_bt").addClass("hidden");         
+        $(".switch_calibration").addClass("hidden");     
+        $(".bad_calibration").addClass("hidden");     
+        
+        zone0.empty();
+        zone1.empty();
+        zone2.empty();
+        zone3.empty();        
+        joystickContainerNewRepair.empty();
+        buttonContainer.empty();
+        ledContainer.empty();
+        joystickCalibrationContainer.empty();
+        joystickVerifyContainer.empty();
+        
+        $(".joystick_container_new").empty();
+        $(".calibration_zone_container").empty();
+        $(".calibration_test_container").empty();
+        
+        $(".diag_inge .diag_component").each(function () {
+            $(this).remove();
+        });    
+        
+        if (globalName == "OMEGA") {       
+            
+            $(".bt_diag_mode").removeClass("hidden");
+            $(".enable_container .state").addClass("hidden");
+            $(".enable_container .values_freq_volt").addClass("hidden");
+            $(".safety_container .state").addClass("hidden");
+            $(".safety_container .values_freq_volt").addClass("hidden");
+            
+            
+            if(modelName == "TSSC" ){
+                $(".safety_container .name_container").html("EMERGENCY FUNCTIONS");
+                $(".buzzer_container").removeClass("hidden");
+                $(".display_container").removeClass("hidden");  
+                $(".safety_container").removeClass("hidden");
+                $(".enable_container").removeClass("hidden"); 
+                $(".emergency_container").removeClass("hidden"); 
+                $(".hw_signals_container.tssc").removeClass("hidden");
+                
+                $(".start_node_bt").removeClass("hidden");
+                $(".stop_node_bt").removeClass("hidden");
+                $(".display_all_bt").removeClass("hidden");
+                $(".stop_all_bt").removeClass("hidden");
+                $(".tsui_restart_bt").removeClass("hidden");                 
+                
+            }else{
+                
+                $(".switch_calibration").removeClass("hidden");
+                                
+                $(".enable_container").removeClass("hidden"); 
+                $(".emergency_container").removeClass("hidden"); 
+                $(".hw_signals_container.sbsh").removeClass("hidden");
+                
+                $(".start_node_bt").removeClass("hidden");
+                $(".stop_node_bt").removeClass("hidden");
+                $(".display_all_bt").removeClass("hidden");
+                $(".stop_all_bt").removeClass("hidden");
+                $(".tsui_restart_bt").removeClass("hidden");                 
+            }
+        }else if(globalName == "ELEGANCE"){            
+            if(modelName == "TSSC" ){
+                //left
+                $(".buzzer_container").removeClass("hidden");
+                $(".srtl_container").removeClass("hidden");
+                $(".display_container").removeClass("hidden");  
+                $(".safety_container").removeClass("hidden");
+                $(".enable_container").removeClass("hidden"); 
+                $(".emergency_container").removeClass("hidden"); 
+                $(".nodeid_container").removeClass("hidden");
+                
+                $(".start_node_bt").removeClass("hidden");
+                $(".stop_node_bt").removeClass("hidden");
+                $(".display_all_bt").removeClass("hidden");
+                $(".stop_all_bt").removeClass("hidden");
+                $(".start_elegance_bt").removeClass("hidden");
+                $(".tsui_restart_bt").removeClass("hidden"); 
+                $(".bad_calibration").removeClass("hidden");   
+                
+            }else if(modelName == "SMARTBOX" && typeChoice == "AGILA"){
+                $(".switch_calibration").removeClass("hidden");
+                
+                $(".srtl_container").removeClass("hidden");
+                $(".display_container").removeClass("hidden");  
+                $(".safety_container").removeClass("hidden");
+                $(".enable_container").removeClass("hidden"); 
+                $(".emergency_container").removeClass("hidden"); 
+                $(".nodeid_container").removeClass("hidden");
+                
+                $(".start_node_bt").removeClass("hidden");
+                $(".stop_node_bt").removeClass("hidden");
+                $(".display_all_bt").removeClass("hidden");
+                $(".stop_all_bt").removeClass("hidden");
+                $(".start_elegance_bt").removeClass("hidden");
+                $(".start_agila_bt").removeClass("hidden"); 
+                $(".tsui_restart_bt").removeClass("hidden"); 
+            }else{
+                $(".switch_calibration").removeClass("hidden");
+                
+                $(".srtl_container").removeClass("hidden");
+                $(".safety_container").removeClass("hidden");
+                $(".enable_container").removeClass("hidden"); 
+                $(".emergency_container").removeClass("hidden"); 
+                $(".nodeid_container").removeClass("hidden");
+                
+                $(".start_node_bt").removeClass("hidden");
+                $(".stop_node_bt").removeClass("hidden");
+                $(".display_all_bt").removeClass("hidden");
+                $(".stop_all_bt").removeClass("hidden");
+                $(".start_elegance_bt").removeClass("hidden");
+                $(".tsui_restart_bt").removeClass("hidden"); 
+            }
+        }
+        
+        
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// SPY BOX        ///////////////////////////////////////////////////////////////////////
@@ -1965,7 +2233,21 @@ $(document).ready(function () {
     $("#dialog-spybox .spy_clear").on('click', function () {
         spyBox.empty();
     });
-
+    $("#dialog-spybox .add_zero_spy").on('click', function () {
+        var inputCanID_filterVal = $(".filter_canid").val().trim();
+        console.log(inputCanID_filterVal);
+        inputCanID_filterVal = addZeroBefore(inputCanID_filterVal, 8);
+        console.log(inputCanID_filterVal);
+        $(".filter_canid").val(inputCanID_filterVal);
+        
+        var inputCanData_filterVal = $(".filter_candata").val().trim();
+        console.log(inputCanID_filterVal);
+        inputCanData_filterVal = addZeroAfter(inputCanData_filterVal, 16);
+        console.log(inputCanData_filterVal);
+        $(".filter_candata").val(inputCanData_filterVal);
+        
+    });
+    
     $("#dialog-spybox .exclude_filter_id").on('click', function () {
         var filterValCanID = $(".filter_canid").val().trim();
         if (filterValCanID !== "") {
@@ -2029,14 +2311,11 @@ $(document).ready(function () {
         console.log(totalLength);
 
         if (totalLength == 26 && is_hexadecimal(dlcInputSender) && is_hexadecimal(idInputSender) && is_hexadecimal(dataInputSender)) {
-            //on doit modifier le message CAN selon le modèle omega ou elegance
-//            if (familyChoice === "ELEGANCE") {
+
             sendSignal("002400806d68d7551407f09b861e3aad000549a844" + dlcInputSender + "0000" + idInputSender + dataInputSender);
-            alert("Message sent successfully.");
-//            } else {
-//                sendSignal("002400806d68d7551407f09b861e3aad000549a844" + dlcInputSender + "0006" + idInputSender + dataInputSender);
-//                alert("Message sent successfully.");
-//            }
+            $(".result_send_confirm").fadeIn(300);
+            setTimeout(function(){$(".result_send_confirm").fadeOut(300);},1000)
+
 
         } else {
             alert("Message not sent : length error, ot not in hexadecimal.")
@@ -2171,22 +2450,32 @@ $(document).ready(function () {
         console.log("------");
         jsonLog = JSON.stringify(jsonLog);
         console.log(jsonLog);
+        
+        var currentdate = new Date();
+        var day = currentdate.getDate(); if (String(day).length <=1){day = "0"+day};
+        var month = currentdate.getMonth() + 1; if (String(month).length <=1){month = "0"+month};
+        var hour = currentdate.getHours(); if (String(hour).length <=1){hour = "0"+hour};
+        var minutes = currentdate.getMinutes(); if (String(minutes).length <=1){minutes = "0"+minutes};
+        var datetime = day + "/" + month + "/" + currentdate.getFullYear() + " " + hour + "h" + minutes;
+        
         $.ajax({
             type: "POST",
             url: "php/api.php?function=save_log_pretest",
-            data: {jsonlog: jsonLog},
+            data: {jsonlog: jsonLog, sn: serialNumber, pn: partNumber, sso: userSSO, FWfctV: FWfctV, FWcalibV: FWcalibV, SWv: SWv},
             success: function (msg) {
                 alert("Your log has been saved.");
+                printJsonLog(jsonLog, serialNumber, partNumber, userSSO, datetime, FWfctV, SWv);
                 $("#print_log").removeClass("hidden");
             }
         });
     }
 
     //Generation du rapport de test et affichage de la fenetre d'impression 
-    function printJsonLog(jsonLog) {
+    function printJsonLog(jsonLog, serialNumber, partNumber, userSSO, datetime, FWfctV, SWv) {
         var msg = JSON.parse(jsonLog);
         var lineButton = "";
         var lineLed = "";
+        var lineDisplay = "";
         var lineJoystick = "";
         var lineBuzzer = "";
         for (var i = 0; i < msg.length; i++) {
@@ -2239,12 +2528,24 @@ $(document).ready(function () {
                 }
                 lineJoystick += line;
             }
+            if (msg[i].fct == "display") {
+                if (msg[i].test == "untested") {
+                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
+                }
+                if (msg[i].test == "OK") {
+                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:green'>" + msg[i].test + "</span></div>"
+                }
+                if (msg[i].test == "FAILED") {
+                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:red'>" + msg[i].test + "</span></div>"
+                }
+                lineDisplay += line;
+            }
 
         }
-        var currentdate = new Date();
-        var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
+        
+        
         var myWindow = window.open('', '', 'width=1000,height=800');
-        myWindow.document.write("<h2>PRETEST LOG RECORD - " + datetime + "</h2><div style='border:1px solid black;padding:5px;'><b>Family</b> : " + familyName + " - <b>PN</b> : " + partNumber + " - <b>SN</b> : " + serialNumber + " - <b>Firmware version</b> : 2.0.3 - <b>User SSO</b> : " + userSSO + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div><h3>JOYSTICKS</h3><div>" + lineJoystick + "</div>");
+        myWindow.document.write("<h2>PRETEST LOG RECORD - " + datetime + "</h2><div style='border:1px solid black;padding:5px;'><b>PN</b> : " + partNumber + " - <b>SN</b> : " + serialNumber + " - <b>Firmware version</b> :"+FWfctV+" - <b>Sofware version</b> :"+SWv+" - <b>User SSO</b> : " + userSSO + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div><h3>DISPLAYS</h3><div>" + lineDisplay + "</div><h3>JOYSTICKS</h3><div>" + lineJoystick + "</div>");
         myWindow.document.close();
         myWindow.focus();
         myWindow.print();
@@ -2261,9 +2562,16 @@ $(document).ready(function () {
 
     //Click on launch final test button
     $(".launch_final").on('click', function () {
-        launchFinalTest();
+        
         $(".instructions_testfinal").addClass("hidden");
-        sendSignal("002400806d68d7551407f09b861e3aad000549a84402000000000000012D000000000000");
+        sendSignal(startNodeMsg);
+        if(typeChoice == "AGILA"){
+            setTimeout(function(){
+                var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                sendSignal(sign);
+            },100)                    
+        }
+        launchFinalTest();
     });
 
     //valider manuellement l'étape (dev only)
@@ -2284,7 +2592,7 @@ $(document).ready(function () {
     //impression du TST
     $(".print_tst").on('click', function () {
         if (errorTestFinal == 0) {
-            var url = "testbench/files/tst/" + tstName;
+            var url = "files/tst/" + tstName;
             window.open(url);
         } else {
             alert("You can't print TST while you get errors in final test");
@@ -2310,9 +2618,12 @@ $(document).ready(function () {
                 for (var i = 0; i < data.length; i++) {
 
                     if (data[i].type == "button") {
-                        finalButtonList.push({symbol_name: data[i].symbol_name, type: data[i].type, description: data[i].description, photo_link: data[i].photo_link, timer: data[i].timer, off_signal: data[i].off_signal, on_signal: data[i].on_signal, can_id: data[i].can_id, pressed_val: data[i].pressed_val, released_val: data[i].released_val, standard_name: data[i].standard_name, is_cdrh: data[i].is_cdrh, is_enable: data[i].is_enable});
+                        finalButtonList.push({symbol_name: data[i].symbol_name, type: data[i].type, description: data[i].description, photo_link: data[i].photo_link, timer: data[i].timer, off_signal: data[i].off_signal, on_signal: data[i].on_signal, can_id: data[i].can_id, pressed_val: data[i].pressed_val, released_val: data[i].released_val, standard_name: data[i].standard_name, is_cdrh: data[i].is_cdrh, is_enable: data[i].is_enable, is_safety: data[i].is_safety});
                         if (data[i].is_led == "1") {
                             finalLedList.push({symbol_name: data[i].symbol_name, type: "led", description: data[i].description, photo_link: data[i].photo_link, timer: data[i].timer, off_signal: data[i].off_signal, on_signal: data[i].on_signal, can_id: data[i].can_id, pressed_val: data[i].pressed_val, released_val: data[i].released_val, standard_name: data[i].standard_name, is_cdrh: data[i].is_cdrh, is_enable: data[i].is_enable});
+                        }
+                        else if(data[i].is_led == "2"){
+                            finalLedList.push({symbol_name: data[i].symbol_name, type: "led_spe", description: data[i].description, photo_link: data[i].photo_link, timer: data[i].timer, off_signal: data[i].off_signal, on_signal: data[i].on_signal, can_id: data[i].can_id, pressed_val: data[i].pressed_val, released_val: data[i].released_val, standard_name: data[i].standard_name, is_cdrh: data[i].is_cdrh, is_enable: data[i].is_enable});
                         }
                     } else if (data[i].type == "display") {
                         finalDisplayList.push({symbol_name: data[i].symbol_name, type: data[i].type, description: data[i].description, photo_link: data[i].photo_link, timer: data[i].timer, off_signal: data[i].off_signal, on_signal: data[i].on_signal, can_id: data[i].can_id, pressed_val: data[i].pressed_val, released_val: data[i].released_val, standard_name: data[i].standard_name, is_cdrh: data[i].is_cdrh, is_enable: data[i].is_enable});
@@ -2350,11 +2661,56 @@ $(document).ready(function () {
         errorTestFinal = 0;
         _MODE = "TESTFINAL";
         getFinalTest();
-        sendSignalPic("1");
-        setTimeout(function () {
-            console.log("")
-            sendSignalPic("2");
-        }, 150);
+        $("#testfinal_container").addClass("hidden");
+        $("#user_wait span").html("Please wait while TSUI is restarting.");
+        $("#user_wait").removeClass("hidden");
+        if(globalName == "ELEGANCE"){
+            sendSignalPic("5");
+            setTimeout(function(){
+                sendSignal(startNodeMsg);
+                if(typeChoice == "AGILA"){
+                    setTimeout(function(){
+                        var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                        sendSignal(sign);
+                    },100)                    
+                }
+                sendSignalPic("1");
+                setTimeout(function () {           
+                    initial_enable_tens = currEnableT;
+                    initial_enable_freq = currEnableF;
+                    initial_safety_tens = currSafetyT;
+                    initial_safety_freq = currSafetyF;
+                    console.log("on a start et on enregistre les valeurs initiales :"+initial_enable_tens+" "+initial_enable_freq+" "+initial_safety_tens+" "+initial_safety_freq)            
+                    sendSignalPic("2");            
+                }, 300);
+            },4000)
+        }else if(globalName == "OMEGA"){
+            if(modelName == "TSSC"){
+                sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc22f000e00000000000000");
+                setTimeout(function () {           
+                    initial_enable_tens = currEnableF;
+                    initial_enable_freq = currEnableT;
+                    initial_safety_tens = currSafetyT;
+                    initial_safety_freq = currSafetyF;
+                    console.log("on a start et on enregistre les valeurs initiales :"+initial_enable_tens+" "+initial_enable_freq+" "+initial_safety_tens+" "+initial_safety_freq)            
+                    sendSignalPic("2");            
+                }, 300);
+            }else{
+                sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc42f000e00000000000000");
+                setTimeout(function(){
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844010000028426401000000000000000");
+                    setTimeout(function () {           
+                        initial_enable_tens = currEnableF;
+                        initial_enable_freq = currEnableT;
+                        initial_safety_tens = currSafetyT;
+                        initial_safety_freq = currSafetyF;
+                        console.log("on a start et on enregistre les valeurs initiales :"+initial_enable_tens+" "+initial_enable_freq+" "+initial_safety_tens+" "+initial_safety_freq)            
+                        sendSignalPic("2");            
+                    }, 300);
+                },20000)
+            }
+        }     
+        
         setTimeout(function () {
             maxIndexFinal = finalTestEntriesTest.length;
 
@@ -2371,11 +2727,13 @@ $(document).ready(function () {
                 $("#stop_final_test").removeClass("hidden");
                 $("#next_final_test").removeClass("hidden");
                 recapListFinal.empty();
-                timerBloc.html("");
+                timerBloc.html("");              
                 
                 displayFinalTest(indexFinal);
+                $("#testfinal_container").removeClass("hidden");
+                $("#user_wait").addClass("hidden");
             }
-        }, 200);
+        }, 5000);
     }
 
     //Affichage du test final en cours
@@ -2395,14 +2753,18 @@ $(document).ready(function () {
         enableT = "";
         isCdrh = finalTestEntriesTest[indexFinal]["is_cdrh"];
         isEnable = finalTestEntriesTest[indexFinal]["is_enable"];
-
+        isSafety = finalTestEntriesTest[indexFinal]["is_safety"];
         setTimeout(function () {
             if (isEnable == 1) {
                 console.log("is enable");
-                waitingEnable = 1;
                 sendSignalPic("1");
+                waitingEnableAndSafety = 1;                
+            }else if(isSafety == 1){
+                console.log("is safety");
+                sendSignalPic("1");
+                waitingEnableAndSafety = 1;   
             }
-        }, 200)
+        }, 100)
 
 
         launchTimer(currTimer);
@@ -2422,7 +2784,13 @@ $(document).ready(function () {
                 imgFinal.attr('src', 'images/' + currPhoto_link);
                 progressBarFinalInside.css('width', pourcentage + '%');
                 progressBarFinal.html(pourcentage + '%');
-                waitingAction = "BUTTON";
+                if(isEnable == 1){
+                    waitingAction = "ENABLE";
+                }else if(isSafety == 1){
+                    waitingAction = "SAFETY";
+                }else{
+                    waitingAction = "BUTTON";
+                }
                 waitingPressValue = pressed_val;
                 waitingReleaseValue = released_val;
                 console.log("waiting action :" + waitingAction + " // " + pressed_val + " / " + released_val);
@@ -2441,6 +2809,30 @@ $(document).ready(function () {
                 });
                 userActionFinal.find(".UAno").on('click', function () {
                     sendSignal(currSignalStop);
+                    nextStepFinal("fail");
+                });
+                break;
+            case "led_spe":
+                symbolNameFinal.html("Is " + currSymbol_name + " light on ?");
+                descriptionFinal.html(currDescription);
+                userActionFinal.html("<button class='UAyes'>YES</button><button class='UAno'>NO</button>");
+                imgFinal.attr('src', 'images/' + currPhoto_link);
+                progressBarFinalInside.css('width', pourcentage + '%');
+                progressBarFinal.html(pourcentage + '%');
+                sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300153000000");
+                sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300245000000");
+                sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300354000000");
+                
+                userActionFinal.find(".UAyes").on('click', function () {
+                    validateTest = 1;
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300144000000");
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300257000000");
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F0030034E000000");
+                });
+                userActionFinal.find(".UAno").on('click', function () {
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300144000000");
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300257000000");
+                    sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F0030034E000000");
                     nextStepFinal("fail");
                 });
                 break;
@@ -2526,17 +2918,22 @@ $(document).ready(function () {
         clearInterval(intervalGlobal);
         var line = "";
         if (result == "ok") {
-            line = "<div class='line' data-standard='" + currStandardName + "' data-enablef='" + enableF + "' data-enablet='" + enableT + "' data-iscdrh='" + isCdrh + "' data-isenable='" + isEnable + "'><span class='symbol'>" + currSymbol_name + "</span> - <span class='description'>" + currDescription + "</span><span class='type'>" + currType + "</span><span class='result green'>TEST OK</span></div>";
+            line = "<div class='line' data-standard='" + currStandardName + "' data-enablef='" + enableF + "' data-enablet='" + enableT + "' data-safetyf='"+safetyF+"' data-safetyf='"+safetyT+"' data-iscdrh='" + isCdrh + "' data-isenable='" + isEnable + "' data-issafety='" + isSafety + "'><span class='symbol'>" + currSymbol_name + "</span> - <span class='description'>" + currDescription + "</span><span class='type'>" + currType + "</span><span class='result green'>TEST OK</span></div>";
             if (isEnable == 1) {
-                console.log("on a enregistré une ligne enable avec enableF :" + enableF + " et enableT :" + enableT);
-                waitingEnable = 0;
+                waitingEnableAndSafety = 0;
+                sendSignalPic("2");
+            }else if(isSafety == 1){
+                waitingEnableAndSafety = 0;
                 sendSignalPic("2");
             }
         } else {
-            line = "<div class='line' data-standard='" + currStandardName + "' data-enablef='" + enableF + "' data-enablet='" + enableT + "' data-iscdrh='" + isCdrh + "' data-isenable='" + isEnable + "'><span class='symbol'>" + currSymbol_name + "</span> - <span class='description'>" + currDescription + "</span><span class='type'>" + currType + "</span><span class='result red'>TEST FAIL</span></div>";
+            line = "<div class='line' data-standard='" + currStandardName + "' data-enablef='" + enableF + "' data-enablet='" + enableT + "' data-safetyf='"+safetyF+"' data-safetyf='"+safetyT+"' data-iscdrh='" + isCdrh + "' data-isenable='" + isEnable + "' data-issafety='" + isSafety + "'><span class='symbol'>" + currSymbol_name + "</span> - <span class='description'>" + currDescription + "</span><span class='type'>" + currType + "</span><span class='result red'>TEST FAIL</span></div>";
             errorTestFinal++;
             if (isEnable == 1) {
-                waitingEnable = 0;
+                waitingEnableAndSafety = 0;
+                sendSignalPic("2");
+            }else if(isSafety == 1){
+                waitingEnableAndSafety = 0;
                 sendSignalPic("2");
             }
         }
@@ -2544,7 +2941,28 @@ $(document).ready(function () {
         var d = recapListFinal.get(0);
         d.scrollTop = d.scrollHeight;
         if (indexFinal < maxIndexFinal) {
-            displayFinalTest(indexFinal);
+            if(isSafety == 1){
+                $("#testfinal_container").addClass("hidden");
+                $("#user_wait span").html("Please wait for Emergency Stop button resetting...");
+                $("#user_wait").removeClass("hidden");
+                if(globalName == "ELEGANCE"){
+                    sendSignalPic("5");
+                    setTimeout(function(){
+                        sendSignal(startNodeMsg);
+                        if(typeChoice == "AGILA"){
+                            setTimeout(function(){
+                                var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                                sendSignal(sign);
+                            },100)                    
+                        }
+                        displayFinalTest(indexFinal);
+                        $("#user_wait").addClass("hidden");
+                        $("#testfinal_container").removeClass("hidden");
+                    },5000)
+                }
+            }else{
+                displayFinalTest(indexFinal);
+            }            
         } else {
             stopFinalTest("end");
         }
@@ -2564,9 +2982,11 @@ $(document).ready(function () {
                 if (validateTest == 1) {
                     pressValueContinue = 0;
                     releaseValueContinue = 0;
+                    hardwareValidation = 0;
                     validateTest = 0;
                     waitingAction = "";
                     nextStepFinal("ok");
+                    
                 }
                 timerBloc.html(Math.round(timer));
                 timer -= 0.1;
@@ -2612,8 +3032,19 @@ $(document).ready(function () {
         var standardName;
         var enableF;
         var enableT;
+        var safetyF;
+        var safetyT;
         var isCdrh;
-        var isEnable;
+        var isEnable = 0;
+        var isSafety = 0;
+        
+        var currentdate = new Date();
+        var day = currentdate.getDate(); if (String(day).length <=1){day = "0"+day};
+        var month = currentdate.getMonth() + 1; if (String(month).length <=1){month = "0"+month};
+        var hour = currentdate.getHours(); if (String(hour).length <=1){hour = "0"+hour};
+        var minutes = currentdate.getMinutes(); if (String(minutes).length <=1){minutes = "0"+minutes};
+        var datetime = day + "/" + month + "/" + currentdate.getFullYear() + " " + hour + "h" + minutes;
+        
         $("#recap_list_t .content_recap .line").each(function () {
             name = $(this).find('.symbol').html();
             description = $(this).find('.description').html();
@@ -2622,46 +3053,56 @@ $(document).ready(function () {
             standardName = $(this).data('standard');
             enableF = $(this).data('enablef');
             enableT = $(this).data('enablet');
+            safetyF = $(this).data('safetyf');
+            safetyT = $(this).data('safetyt');
             isCdrh = $(this).data('iscdrh');
             isEnable = $(this).data('isenable');
+            isSafety = $(this).data('issafety');
 
-            jsonLogFinal.push({name: name, standard_name: standardName, description: description, type: type, result: result, enable_freq: enableF, enable_tens: enableT, is_cdrh: isCdrh, is_enable: isEnable});
+            jsonLogFinal.push({name: name, standard_name: standardName, description: description, type: type, result: result, enable_freq: enableF, enable_tens: enableT, safety_freq: enableF, safety_tens: enableT, is_cdrh: isCdrh, is_enable: isEnable, is_safety: isSafety});
         });
         jsonLogFinal = JSON.stringify(jsonLogFinal);
         console.log(jsonLogFinal);
-
+        
 
         $.ajax({
             type: "POST",
             url: "php/api.php?function=save_log_final",
-            data: {jsonlog: jsonLogFinal, sn: serialNumber, pn: partNumber, sso: userSSO, FWfctV: FWfctV, FWcalibV: FWcalibV, SWv: SWv, enableTens: currEnableT, enableFreq: currEnableF, alimTestbench: currGlobalVoltage, alimTsui: currTsuiVoltage, jsonCalibLog : calibLogJSON},
+            data: {jsonlog: jsonLogFinal, sn: serialNumber, pn: partNumber, sso: userSSO, FWfctV: FWfctV, FWcalibV: FWcalibV, SWv: SWv, enableTens: initial_enable_tens, enableFreq: initial_enable_freq, safetyTens:initial_safety_tens, safetyFreq:initial_safety_freq, alimTestbench: currGlobalVoltage, alimTsui: currTsuiVoltage, jsonCalibLog : calibLogJSON},
             success: function (msg) {
                 alert("Your log has been saved.");
-                printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, currEnableF, currEnableT);
+                printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, initial_enable_freq, initial_enable_tens, initial_safety_freq, initial_safety_tens, calibLogJSON, datetime);
             }
         });
     }
 
     //Generation du rapport de test et affichage de la fenetre d'impression 
-    function printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, currEnableF, currEnableT) {
+    function printJsonLogFinal(jsonLogFinal, serialNumber, partNumber, userSSO, FWfctV, FWcalibV, SWv, currGlobalVoltage, currTsuiVoltage, initial_enable_freq, initial_enable_tens, initial_safety_freq, initial_safety_tens, calibLogJSON, datetime) {
         var msg = JSON.parse(jsonLogFinal);
         var msgCalib = JSON.parse(calibLogJSON);
         var lineButton = "";
+        var lineSafety = "";
         var lineLed = "";
         var lineDisplay = "";
         var lineJoystick = "";
         var lineBuzzer = "";
         var lineCalib = "";
-        var lsl = 23.8;
-        var usl = 24.2;
+        var lsl = 21.6;
+        var usl = 26.4;
         var testAlimGlobal;
         var testAlimTSUI;
         
         if (currGlobalVoltage != "undefined" && currTsuiVoltage) {
-            currGlobalVoltage = currGlobalVoltage.toFixed(2);
+            currGlobalVoltage = parseFloat(currGlobalVoltage).toFixed(2);
         }
         if (currTsuiVoltage != "undefined" && currTsuiVoltage) {
-            currTsuiVoltage = currTsuiVoltage.toFixed(2);
+            currTsuiVoltage = parseFloat(currTsuiVoltage).toFixed(2);
+        }        
+        if (initial_enable_tens != "undefined" && initial_enable_tens) {
+            initial_enable_tens = parseFloat(initial_enable_tens).toFixed(2);
+        }        
+        if (initial_safety_tens != "undefined" && initial_safety_tens) {
+            initial_safety_tens = parseFloat(initial_safety_tens).toFixed(2);
         }
 
         if (lsl < currGlobalVoltage && usl > currGlobalVoltage) {
@@ -2674,8 +3115,15 @@ $(document).ready(function () {
         } else {
             testAlimTSUI = "Fail"
         }
+        
         for (var i = 0; i < msg.length; i++) {
-            if (msg[i].type == "button") {
+            if(msg[i].result == "TEST OK"){
+                msg[i].result = "PASS";
+            }else{
+                msg[i].result = "FAIL";
+            }
+            console.log('trying to write a line'+msg[i].name + " "+ msg[i].result+" "+msg[i].type+ " "+ msg[i].is_safety);
+            if (msg[i].type == "button" && msg[i].is_safety == "0") {
                 if (msg[i].enable_tens !== "") {
                     var enabletens = msg[i].enable_tens.toFixed(2) + "V"
                 } else {
@@ -2687,12 +3135,13 @@ $(document).ready(function () {
                     var enablefreq = ""
                 }
                 if (msg[i].is_enable == 0) {
-                    msg[i].is_enable == " "
+                    msg[i].is_enable = "N"
                 } else {
                     msg[i].is_enable = "Y"
                 }
+                
                 if (msg[i].is_cdrh == 0) {
-                    msg[i].is_cdrh == " "
+                    msg[i].is_cdrh = "N"
                 } else {
                     msg[i].is_cdrh = "Y"
                 }
@@ -2700,14 +3149,40 @@ $(document).ready(function () {
                 line += "<div style='margin-bottom:2px;border-bottom:1px solid grey;padding-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>RELEASE</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>" + msg[i].result + "</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'></span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_enable + "</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;border-left:1px solid black;'>" + msg[i].is_cdrh + "</span></div>"
                 lineButton += line;
             }
+            if (msg[i].type == "button" && msg[i].is_safety == "1") {
+                if (msg[i].safety_tens !== "") {
+                    var safetytens = msg[i].safety_tens.toFixed(2) + "V"
+                } else {
+                    var safetytens = ""
+                }
+                if (msg[i].safety_freq !== "") {
+                    var safetyfreq = msg[i].safety_freq + "Hz / "
+                } else {
+                    var safetyfreq = ""
+                }
+                if (msg[i].is_safety == 0) {
+                    msg[i].is_safety = "N"
+                } else {
+                    msg[i].is_safety = "Y"
+                }
+                if (msg[i].is_cdrh == 0) {
+                    msg[i].is_cdrh = "N"
+                } else {
+                    msg[i].is_cdrh = "Y"
+                }
+                
+                var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>PRESS</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>" + msg[i].result + "</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>" + safetyfreq + safetytens + "</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_safety + "</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;border-left:1px solid black;'>" + msg[i].is_cdrh + "</span></div>"
+                line += "<div style='margin-bottom:2px;border-bottom:1px solid grey;padding-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>RELEASE</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>" + msg[i].result + "</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'></span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_safety + "</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;border-left:1px solid black;'>" + msg[i].is_cdrh + "</span></div>"
+                lineSafety += line;
+            }
             if (msg[i].type == "led") {
                 if (msg[i].is_enable == 0) {
-                    msg[i].is_enable == " "
+                    msg[i].is_enable = "N"
                 } else {
                     msg[i].is_enable = "Y"
                 }
                 if (msg[i].is_cdrh == 0) {
-                    msg[i].is_cdrh == " "
+                    msg[i].is_cdrh = "N"
                 } else {
                     msg[i].is_cdrh = "Y"
                 }
@@ -2716,12 +3191,12 @@ $(document).ready(function () {
             }
             if (msg[i].type == "display") {
                 if (msg[i].is_enable == 0) {
-                    msg[i].is_enable == " "
+                    msg[i].is_enable = "N"
                 } else {
                     msg[i].is_enable = "Y"
                 }
                 if (msg[i].is_cdrh == 0) {
-                    msg[i].is_cdrh == " "
+                    msg[i].is_cdrh = "N"
                 } else {
                     msg[i].is_cdrh = "Y"
                 }
@@ -2730,12 +3205,12 @@ $(document).ready(function () {
             }
             if (msg[i].type == "buzzer") {
                 if (msg[i].is_enable == 0) {
-                    msg[i].is_enable == " "
+                    msg[i].is_enable = "N"
                 } else {
                     msg[i].is_enable = "Y"
                 }
                 if (msg[i].is_cdrh == 0) {
-                    msg[i].is_cdrh == " "
+                    msg[i].is_cdrh = "N"
                 } else {
                     msg[i].is_cdrh = "Y"
                 }
@@ -2744,36 +3219,33 @@ $(document).ready(function () {
             }
             if (msg[i].type == "joystick") {
                 if (msg[i].is_enable == 0) {
-                    msg[i].is_enable == " "
+                    msg[i].is_enable = "N"
                 } else {
                     msg[i].is_enable = "Y"
                 }
                 if (msg[i].is_cdrh == 0) {
-                    msg[i].is_cdrh == " "
+                    msg[i].is_cdrh = "N"
                 } else {
                     msg[i].is_cdrh = "Y"
                 }
-                if (msg[i].result == "TEST OK") {
-                    var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>LEFT</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
-                    line += "<div style='margin-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>RIGHT</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
-                    line += "<div style='margin-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>TOP</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
-                    line += "<div style='margin-bottom:2px;border-bottom:1px solid grey;padding-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>BOTTOM</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>TEST OK</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
-                }
-                if (msg[i].result == "TEST FAIL") {
+                if (msg[i].result == "TEST OK" || msg[i].result == "PASS") {
+                    var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>LEFT</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
+                    line += "<div style='margin-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>RIGHT</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
+                    line += "<div style='margin-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>TOP</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
+                    line += "<div style='margin-bottom:2px;border-bottom:1px solid grey;padding-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>BOTTOM</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>PASS</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
+                }else{
                     var line = "<div style='margin-bottom:2px;border-bottom:1px solid grey;padding-bottom:2px;'><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msg[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>--</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>FAIL</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>FAIL</span><span style='text-align:center;display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + msg[i].is_cdrh + "</span></div>"
                 }
-
                 lineJoystick += line;
             }
 
         }
         for (var i = 0; i < msgCalib.length; i++){
-            var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>"+msgCalib[i].description+"</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+msgCalib[i].result+"</span></div>"
+            var line = "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].name + "</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>" + msgCalib[i].standard_name + "</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>"+msgCalib[i].description+"</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>"+msgCalib[i].result+"</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>| "+msgCalib[i].minZero+" | - | "+msgCalib[i].maxZero+" |</span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'>| "+msgCalib[i].minAxis+" | - | "+msgCalib[i].maxAxis+" |</span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'>PASS</span></div>"
             lineCalib += line;
         }
         
-        var currentdate = new Date();
-        var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
+        
         var myWindow = window.open('', '', 'width=1000,height=800');
         myWindow.document.write(
                 "<h2>FINAL TEST LOG RECORD - " + datetime + "</h2>"
@@ -2783,23 +3255,39 @@ $(document).ready(function () {
                 + "<div><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Type</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Measured Value</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>LSL</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>USL</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>Pass/Fail</b></span></div>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>V alimentation</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>" + currTsuiVoltage + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + lsl + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + usl + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + testAlimGlobal + "</span></div>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>V TSUI</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>" + currGlobalVoltage + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + lsl + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + usl + "V</span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'>" + testAlimTSUI + "</span></div>"
-                + "</div>"
+                + "</div>"                
+                + "<h3>INITIAL STATES</h3><div>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:150px;margin-left:5px;'><b>Type</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Measured Value</b></span></div>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:150px;margin-left:5px;'>Enable Frequency</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+initial_enable_freq+"Hz</span></div>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:150px;margin-left:5px;'>Enable Voltage</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+initial_enable_tens+"V</span></div>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:150px;margin-left:5px;'>Safety Frequency</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+initial_safety_freq+"Hz</span></div>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:150px;margin-left:5px;'>Safety Voltage</span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'>"+initial_safety_tens+"V</span></div>"
                 + "<h3>BUTTONS</h3>"
+                + "<h5>Test is PASS when <b>CAN signal pressed</b> is present and <b>CAN signal released</b> is present.<br>When tested entry is <b>enable</b>, test is PASS if measured values are between 1800Hz-2200Hz and 22.6V-26.4V. </h5>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Action</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Measure</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>Enable</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>CDRH</b></span></div>"
-                + lineButton
+                + "<div>" +lineButton+"</div>"
+                + "<h3>EMERGENCY STOP (SAFETY LOOP)</h3>"
+                + "<h5>Test is PASS when <b>CAN signal pressed</b> is present and <b>CAN signal released</b> is present.<br>When tested entry is <b>safety</b>, test is PASS if measured values are between 0Hz-200Hz and 0V-2.4V. </h5>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Action</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Measure</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>Safety</b></span><span style='display:inline-block;vertical-align:top;width:50px;margin-left:5px;'><b>CDRH</b></span></div>"
+                + "<div>" +lineSafety+"</div>"
                 + "<h3>BACKLIGHTS</h3>"
+                + "<h5>Test is PASS when user has confirmed light is lit. </h5>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineLed + "</div>"
                 + "<h3>7 SEGMENTS DISPLAYS</h3>"
+                + "<h5>Test is PASS when user has confirmed 8 is lit. </h5>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineDisplay + "</div>"
                 + "<h3>CALIBRATION</h3>"
-                + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Action</b></span></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Raw Data</b></span></div>"
+                + "<h5>Test is PASS when axis raw value is in the range of acceptance from database. </h5>"
+                + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Action</b></span></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Raw Data</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Zero Range</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Axis Range</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Result</b></span></div>"
                 + "<div>" + lineCalib + "</div>"
                 + "<h3>JOYSTICKS</h3>"
+                + "<h5>Test is PASS when axis value reaches (-)100%. </h5>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Ref. TST</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Action</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Linearity Result</b></span><span style='display:inline-block;vertical-align:top;width:120px;margin-left:5px;'><b>Range Result</b></span><span style='display:inline-block;vertical-align:top;width:80px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineJoystick + "</div>"
                 + "<h3>BUZZER</h3>"
+                + "<h5>Test is PASS when user has confirmed he heard TSUI buzzer. </h5>"
                 + "<div><span style='display:inline-block;vertical-align:top;width:75px;margin-left:5px;'><b>Name</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>Test Result</b></span><span style='display:inline-block;vertical-align:top;width:100px;margin-left:5px;'><b>CDRH</b></span></div>"
                 + "<div>" + lineBuzzer + "</div>"
                 );
@@ -2809,10 +3297,34 @@ $(document).ready(function () {
         myWindow.close();
     }
 
-    function setEnableValues() {
-        enableF = currEnableF;
-        enableT = currEnableT;
-        console.log("on a set enableF :" + enableF + " et enableT :" + enableT);
+    function setEnableAndSafetyValues(type) {
+        if(type== "enable"){
+            enableF = currEnableF;
+            enableT = currEnableT;
+            safetyT = currSafetyT;
+            safetyF = currSafetyF;
+            if((enableF >= 1800 && enableT <= 21.6) || ((enableF <= 1800 && enableT >= 21.6)) || ((enableF <= 1800 && enableT <= 21.6)) ){
+                hardwareValidation = 0;
+                //alert("error validation ENABLE : freq: "+enableF+" tens: "+enableT)
+            }else{
+                hardwareValidation = 1;
+                //alert("ok validation ENABLE : freq: "+enableF+" tens: "+enableT)
+            }
+        }else if(type== "safety"){
+            enableF = currEnableF;
+            enableT = currEnableT;
+            safetyT = currSafetyT;
+            safetyF = currSafetyF;
+            if((safetyF >= 200 && safetyT <= 2.4) || ((safetyF <= 200 && safetyT >= 2.4)) || ((safetyF >= 200 && safetyT >= 2.4)) ){
+                hardwareValidation = 0;
+                //alert("error validation SAFETY : "+safetyF, safetyT)
+            }else{
+                hardwareValidation = 1;
+                //alert("ok validation SAFETY : "+enableF, enableT)
+            }
+        }
+        
+        console.log("on a set enableF :" + enableF + " et enableT :" + enableT+" et safetyT :" + safetyT+" et safetyF :" + safetyF);
     }
 
 
@@ -2883,10 +3395,11 @@ $(document).ready(function () {
     function startCalibrate(subindexX, subindexY, id) {
         _MODE = "CALIBRATION";
         calibrateContainer.find(".id" + id + " .calibrate_tool").removeClass("hidden");
-        if (subindexX !== "null") {
+        
+        if (subindexX !== "null" && subindexX !== "undefined" && subindexX) {
             calibrateZeroLong(subindexX, subindexY, id);
         } else {
-            calibrateZeroLat(subindexX, subindexY, id);
+            calibrateMinLat(subindexX, subindexY, id);
         }
     }
     function startCalibrateMushroom(subindex, id) {
@@ -3059,7 +3572,7 @@ $(document).ready(function () {
                         $(".realtime_joysticks_val.id" + identifier).find(".raw_min_x").html(afinalSigned);
                         var newSignal = signalComposer(axisRawMinLong, "2154", subindexX); //param = response + header for min long
                         sendSignal(newSignal);
-                        if (subindexY !== "null") {
+                        if (subindexY !== "null" && subindexY !== "undefined" && subindexY) {
                             calibrateMinLat(subindexX, subindexY, identifier);
                         } else {
                             resetCalibration(identifier);
@@ -3169,18 +3682,17 @@ $(document).ready(function () {
     function resetCalibration(identifier) {
 
         $(".bloc_calibrate.id" + identifier).find(".validate_calib").off();
-        $(".bloc_calibrate.id" + identifier).find(".status_calib").html("Joystick " + identifier + " is calibrated");
+        var nameJo = $(".bloc_calibrate.id" + identifier).find(".title_jauge").html();
+        $(".bloc_calibrate.id" + identifier).find(".status_calib").html("Joystick "+nameJo+" is now calibrated");
         $(".bloc_calibrate.id" + identifier).find(".action_calib").html("");
         $(".bloc_calibrate.id" + identifier).find(".validate_calib").on('click', function () {
             $(".bloc_calibrate.id" + identifier).find(".calibrate_tool").addClass("hidden");
             $(".bloc_calibrate.id" + identifier).find("button").removeClass("hidden");
             $(".bloc_calibrate.id" + identifier).find(".validate_calib").off();
-
-
-            var descri = $(".id" + identifier + " .title_jauge").html();
             $(".statut_calibration_verif").removeClass("hidden");
             $(".statut_calibration_verif").find(".id" + identifier + "").remove();
-            $(".statut_calibration_verif").append("<div class='line_validate_calib id" + identifier + "'><img class='check_calib' src='images/check.png'>Joystick <b>" + descri + "</b> is calibrated</div>");
+            
+            $(".statut_calibration_verif").append("<div class='line_validate_calib id" + identifier + "'><img class='check_calib' src='images/check.png'>Joystick "+nameJo+" is now calibrated</div>");
 
             setTimeout(function () {
                 var count = $("#content_calibration .calibration_zone_container .bloc_calibrate").length;
@@ -3221,6 +3733,7 @@ $(document).ready(function () {
         _MODE = "CALIBRATION";
         $(".id" + identifier).removeClass("blink_me");
     }
+    
     function updateVerifyData(verifyVal, axis, currentIdentifier) {
         var xValMin = joystickVerifyContainer.find(".id" + currentIdentifier + " .minx_value_joy").html();
         var xValMax = joystickVerifyContainer.find(".id" + currentIdentifier + " .maxx_value_joy").html();
@@ -3311,11 +3824,15 @@ $(document).ready(function () {
         $("#content_calibration .calibration_test_container .realtime_joysticks_val").each(function(){
             var symbol_name = $(this).data('symb');
             var standard_name = $(this).data('standard');
+            var min_axis = $(this).data('minaxis');
+            var max_axis = $(this).data('maxaxis');
+            var min_zero = $(this).data('minzero');
+            var max_zero = $(this).data('maxzero');
             
             $(this).find(".get_val").each(function(){
                 var description = $(this).data('descri').toUpperCase();
                 var result = $(this).html();            
-                calibLog.push({name: symbol_name, standard_name: standard_name, description: description, result: result});
+                calibLog.push({name: symbol_name, standard_name: standard_name, description: description, result: result, minAxis : min_axis, maxAxis : max_axis, minZero : min_zero, maxZero : max_zero});
             });                        
             
         });
@@ -3580,6 +4097,9 @@ $(document).ready(function () {
                 }, 200);
             } else {
                 console.log("LINE " + startIndex);
+                var totalLine = arrayOfLines.length;
+                var tempo = 2;
+                if(totalLine < 6000){tempo = 100}
                 var lengthFirstLine = arrayOfLines[startIndex].length - 1;
                 var newval = lengthFirstLine.toString(16);
                 var customCAN = Cal_post + Cal_dlc + canId + "21501f01" + newval + "000000";
@@ -3591,14 +4111,15 @@ $(document).ready(function () {
                 }
                 
                 sendSignal(customCAN);
+                console.log("tempo line" +tempo);
                 setTimeout(function () {
                     var asciiToHex = "";
                     for (var index = 0; index < lengthFirstLine; index++) {
                         asciiToHex += arrayOfLines[startIndex].charCodeAt(index).toString(16);
                     }
                     sendMultipleSignal(asciiToHex, canId, startIndex);
-
-                }, 200);
+                    
+                }, tempo);
             }
         } else {
             setTimeout(function () {
@@ -3770,14 +4291,19 @@ $(document).ready(function () {
     //décompose, formate puis envoi une ligne du fichier .cro
     function sendMultipleSignal(signal, canId, startIndex) {
         var nbMessage = parseInt((signal.length / 2) / 7);
+        var tempo = 1;
         if (nbMessage == 0) {
             nbMessage = 1;
         }
         if (((signal.length / 2) % 7 > 0)) {
             nbMessage += 1;
         }
+        if(nbMessage > 15 ){
+            tempo = 12;
+        }
         var dataZero;
         sendSingle(0);
+        console.log(nbMessage, "tempo segment " +tempo);
         function sendSingle(index) {
             var t;
             var c = 0;
@@ -3810,7 +4336,7 @@ $(document).ready(function () {
             } else {
                 setTimeout(function () {
                     sendSingle(index + 1);
-                }, 10);
+                }, tempo);
             }
 
         }
@@ -4030,7 +4556,7 @@ $(document).ready(function () {
         if (activeSearchHistoryResult.length !== 0) {
             $(".history_table .content_history_table").empty();
             for (var index = 0; index < activeSearchHistoryResult.length; index++) {
-                var lineHistory = "<div class='line_history_table' data-index='" + index + "' data-type='" + activeSearchHistoryResult[index].type + "'>"
+                var lineHistory = "<div class='line_history_table' data-index='" + index + "' data-type='" + activeSearchHistoryResult[index].type + "' data-id='" + activeSearchHistoryResult[index].id + "'>"
                         + "<span class='id_history'>" + activeSearchHistoryResult[index].id + "</span>"
                         + "<span class='pn_history'>" + activeSearchHistoryResult[index].part_number + "</span>"
                         + "<span class='sn_history'>" + activeSearchHistoryResult[index].serial_number + "</span>"
@@ -4044,11 +4570,11 @@ $(document).ready(function () {
             generateNewHistoryJson();
             $(".line_history_table .data_history").on('click', function () {
                 if ($(this).parent(".line_history_table").data("type") == "pretest") {
-                    var indexlog = $(this).parent(".line_history_table").data("index");
-                    printHistoryLog(activeSearchHistoryResult[indexlog].json_log, activeSearchHistoryResult[indexlog].part_number, activeSearchHistoryResult[indexlog].serial_number, activeSearchHistoryResult[indexlog].user_sso, activeSearchHistoryResult[indexlog].date);
+                    var id = $(this).parent(".line_history_table").data("id");
+                    printHistoryLog(id);
                 } else if ($(this).parent(".line_history_table").data("type") == "finaltest") {
-                    var indexlog = $(this).parent(".line_history_table").data("index");
-                    printHistoryLogFinal(activeSearchHistoryResult[indexlog].json_log, activeSearchHistoryResult[indexlog].part_number, activeSearchHistoryResult[indexlog].serial_number, activeSearchHistoryResult[indexlog].user_sso, activeSearchHistoryResult[indexlog].date);
+                    var id = $(this).parent(".line_history_table").data("id");
+                    printHistoryLogFinal(id);
                 } else {
                     alert("no type found");
                 }
@@ -4059,126 +4585,57 @@ $(document).ready(function () {
     }
     
     //Generation du rapport de test et affichage de la fenetre d'impression 
-    function printHistoryLog(jsonLog, pn, sn, sso, date) {
-        var msg = JSON.parse(jsonLog);
-        var lineButton = "";
-        var lineLed = "";
-        var lineJoystick = "";
-        var lineBuzzer = "";
-        for (var i = 0; i < msg.length; i++) {
-            if (msg[i].fct == "button") {
-                if (msg[i].test == "untested") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:green'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "FAILED") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:red'>" + msg[i].test + "</span></div>"
-                }
-
-                lineButton += line;
+    function printHistoryLog(id) {
+       $.ajax({
+            //get global log with param1 = PN, param2 = SN, param3 = userSSO, param4= date
+            url: 'php/api.php?function=get_global_log_by_id&param1=' + id,
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data, statut) {
+                console.log(data);
+                var date = data[0].date;
+                var fw_fct_version = data[0].fw_fct_version;
+                var json_log = data[0].json_log;
+                var part_number = data[0].part_number;
+                var serial_number = data[0].serial_number;
+                var sw_version = data[0].sw_version;
+                var user_sso = data[0].user_sso;                
+                printJsonLog(json_log, serial_number, part_number, user_sso, date, fw_fct_version, sw_version)
             }
-            if (msg[i].fct == "led") {
-                if (msg[i].test == "untested") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:green'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "FAILED") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:red'>" + msg[i].test + "</span></div>"
-                }
-                lineLed += line;
-            }
-            if (msg[i].fct == "buzzer") {
-                if (msg[i].test == "untested") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:green'>" + msg[i].test + "</span></div>"
-                }
-                if (msg[i].test == "FAILED") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:red'>" + msg[i].test + "</span></div>"
-                }
-                lineBuzzer += line;
-            }
-            if (msg[i].fct == "joystick") {
-                if (msg[i].test == "untested") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> = <span style='color:orange'>" + msg[i].test + "</span></div>"
-                }
-                lineJoystick += line;
-            }
-
-        }
-        var currentdate = new Date();
-        var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
-        var myWindow = window.open('', '', 'width=1000,height=800');
-        myWindow.document.write("<h2>PRETEST LOG RECORD - " + date + "</h2><div style='border:1px solid black;padding:5px;'><b>PN</b> : " + pn + " - <b>SN</b> : " + sn + " - <b>Firmware version</b> : 2.0.3 - <b>User SSO</b> : " + sso + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div>");
-        myWindow.document.close();
-        myWindow.focus();
-        myWindow.print();
-        myWindow.close();
+        });
     }
 
     //Generation du rapport de test FINAL et affichage de la fenetre d'impression 
-    function printHistoryLogFinal(jsonLog, pn, sn, sso, date) {
-        var msg = JSON.parse(jsonLog);
-        var lineButton = "";
-        var lineLed = "";
-        var lineJoystick = "";
-        var lineBuzzer = "";
-        for (var i = 0; i < msg.length; i++) {
-            if (msg[i].type == "button") {
-                if (msg[i].result == "TEST OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:green'>" + msg[i].result + "</span></div>"
-                }
-                if (msg[i].result == "TEST FAIL") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:red'>" + msg[i].result + "</span></div>"
-                }
-
-                lineButton += line;
+    function printHistoryLogFinal(id) {
+        $.ajax({
+            //get global log with param1 = PN, param2 = SN, param3 = userSSO, param4= date
+            url: 'php/api.php?function=get_global_log_by_id&param1=' + id,
+            type: 'GET',
+            dataType: 'JSON',
+            success: function (data, statut) {
+                console.log(data);
+                var alim_testbench = data[0].alim_testbench;
+                var alim_tsui = data[0].alim_tsui;
+                var date = data[0].date;
+                var enable_freq = data[0].enable_freq;
+                var enable_tens = data[0].enable_tens;
+                var fw_calib_version = data[0].fw_calib_version;
+                var fw_fct_version = data[0].fw_fct_version;
+                var id = data[0].id;
+                var json_calib_log = data[0].json_calib_log;
+                var json_log = data[0].json_log;
+                var part_number = data[0].part_number;
+                var role = data[0].role;
+                var safety_freq = data[0].safety_freq;
+                var safety_tens = data[0].safety_tens;
+                var serial_number = data[0].serial_number;
+                var sw_version = data[0].sw_version;
+                var type = data[0].type;
+                var user_sso = data[0].user_sso;
+                
+                printJsonLogFinal(json_log, serial_number, part_number, user_sso, fw_fct_version, fw_calib_version, sw_version, alim_testbench, alim_tsui, enable_freq, enable_tens, safety_freq, safety_tens, json_calib_log, date)
             }
-            if (msg[i].type == "led") {
-                if (msg[i].result == "TEST OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:green'>" + msg[i].result + "</span></div>"
-                }
-                if (msg[i].result == "TEST FAIL") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:red'>" + msg[i].result + "</span></div>"
-                }
-
-                lineLed += line;
-            }
-            if (msg[i].type == "buzzer") {
-                if (msg[i].result == "TEST OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:green'>" + msg[i].result + "</span></div>"
-                }
-                if (msg[i].result == "TEST FAIL") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:red'>" + msg[i].result + "</span></div>"
-                }
-
-                lineBuzzer += line;
-            }
-            if (msg[i].type == "joystick") {
-                if (msg[i].result == "TEST OK") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:green'>" + msg[i].result + "</span></div>"
-                }
-                if (msg[i].result == "TEST FAIL") {
-                    var line = "<div><span style='width:100px;display:inline-block;'>" + msg[i].name + "</span> (" + msg[i].description + ") = <span style='color:red'>" + msg[i].result + "</span></div>"
-                }
-
-                lineJoystick += line;
-            }
-
-        }
-        var currentdate = new Date();
-        var datetime = currentdate.getDate() + "/" + (currentdate.getMonth() + 1) + "/" + currentdate.getFullYear() + " " + currentdate.getHours() + "h" + currentdate.getMinutes();
-        var myWindow = window.open('', '', 'width=1000,height=800');
-        myWindow.document.write("<h2>FINAL TEST LOG RECORD - " + date + "</h2><div style='border:1px solid black;padding:5px;'><b>PN</b> : " + pn + " - <b>SN</b> : " + sn + " - <b>Firmware version</b> : 2.0.3 - <b>User SSO</b> : " + sso + "</div><h3>BUTTONS</h3><div>" + lineButton + "</div><h3>BUZZERS</h3><div>" + lineBuzzer + "</div><h3>BACKLIGHTS</h3><div>" + lineLed + "</div>");
-        myWindow.document.close();
-        myWindow.focus();
-        myWindow.print();
-        myWindow.close();
+        });
     }
 
     function sortBy(field, reverse, primer) {
@@ -4335,7 +4792,43 @@ $(document).ready(function () {
         sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F00300257000000");
         sendSignal("002400806d68d7551407f09b861e3aad000549a844050000" + cobID2 + "2F0030034E000000");
     });
+    
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////// PING BAD BTN           ///////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    $(".get_bad").on('click', function(){
+        if($(this).hasClass("on")){
+            $(this).removeClass('on');
+            $(".get_bad").removeClass("blinker_me");
+            $(this).find("span").html("Check");
+            clearInterval(intervalBAD);
+            _MODE = "CALIBRATION";
+            
+        }else{
+            _MODE = "BAD_CHECK";
+            $(this).addClass('on');
+            $(this).find("span").html("Stop");
+            $(".get_bad").addClass("blinker_me");
+            intervalBAD = setInterval(function(){
+                var pingSignal = Cal_post+"080000"+cobID2+"40006003";
+                sendSignal(pingSignal);
+            },250);
+        }
+        
+    })
+    function startVerifyGetBAD() {
+        
+        
+    }
+    function stopVerifyGetBAD() {
+        $(".verify_calibration.id" + identifier).removeClass("hidden");
+        $(".stop_calibration_verif.id" + identifier).addClass("hidden");
+        clearInterval(intervalVerify);
+        _MODE = "CALIBRATION";
+        $(".id" + identifier).removeClass("blink_me");
+    }
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4359,9 +4852,7 @@ $(document).ready(function () {
     $("#record_log").on('click', function () {
         generateJsonLog();
     });
-    $("#print_log").on('click', function () {
-        printJsonLog(jsonLog);
-    });
+    
 
     $(".start_node_bt").on('click', function () {
         sendSignal(startNodeMsg);
@@ -4452,7 +4943,7 @@ $(document).ready(function () {
     $(".change_nodeid").on('click', function () {
         var value = $("#value_nodeid").html().trim();
         if (value !== " ") {
-            alert("send D" + value);
+            //alert("send D" + value);
             sendSignalPic("D" + value);
             sendSignalPic("2");
             setTimeout(function () {
@@ -4463,7 +4954,7 @@ $(document).ready(function () {
                         setGenericMessages(globalName);
                         _MODE = "TOOLBOX";
                         sendSignalPic("1");
-                    }, 1000)
+                    }, 3000)
                 }, 1000)
 
             }, 200)
@@ -4576,13 +5067,25 @@ $(document).ready(function () {
         if ($(this).hasClass("on")) {
             $(this).removeClass("on");
             $(this).find("img").attr('src', 'images/switch_off.png');
-            sendSignalPic("4");
-            sendSignal(startNodeMsg);
+            sendSignalPic("4");            
+            if(typeChoice == "AGILA"){
+                setTimeout(function(){
+                    sendSignal(startNodeMsg);
+                    var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                    sendSignal(sign);
+                },4000)                    
+            }
         } else {
             $(this).addClass("on");
             $(this).find("img").attr('src', 'images/switch_on.png');
-            sendSignalPic("3");
-            sendSignal(startNodeMsg);
+            sendSignalPic("3");            
+            if(typeChoice == "AGILA"){
+                setTimeout(function(){
+                    sendSignal(startNodeMsg);
+                    var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                    sendSignal(sign);
+                },4000)                    
+            }
             setTimeout(function () {
                 if (hasSRTL == 0) {
                     _this.removeClass("on");
@@ -4600,9 +5103,7 @@ $(document).ready(function () {
     });
     $(".agila_conf").on('click', function () {
         var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
-        console.log(sign);
         sendSignal(sign);
-
     });
     $(".front_panel_led1").on('click', function () {
         var sign = "002400806d68d7551407f09b861e3aad000549a844020000000004200200000000000000";
@@ -4629,7 +5130,15 @@ $(document).ready(function () {
     $(".tsui_restart_bt").on('click', function () {
         if(globalName == "ELEGANCE"){
             sendSignalPic("5");
-            setTimeout(function(){sendSignal(startNodeMsg)},20000)
+            setTimeout(function(){
+                sendSignal(startNodeMsg)
+                if(typeChoice == "AGILA"){
+                    setTimeout(function(){
+                        var sign = "002400806d68d7551407f09b861e3aad000549a844080000" + cobID2 + "2f01300101000000";
+                        sendSignal(sign);
+                    },100)                    
+                }
+            },20000)
         }else if(globalName == "OMEGA"){
             if(modelName == "TSSC"){
                 sendSignal("002400806d68d7551407f09b861e3aad000549a8440800001fc22f000e00000000000000");
@@ -4639,10 +5148,11 @@ $(document).ready(function () {
                     sendSignal("002400806d68d7551407f09b861e3aad000549a844010000028426401000000000000000");
                 },20000)
             }
-        }
-        
+        }        
     });
-
+    $(".head_logo").on('click', function(){
+        _MODE = "START";
+    });
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////// SEND SIGNAL TO DRIVER ////////////////////////////////////////////////////////////////
@@ -4659,7 +5169,7 @@ $(document).ready(function () {
             console.log(jsonData);        
             ws.send(jsonData);
         }else{
-            alert("Error : message not in hexadecimal, sending aborted to prevent Gateway corruption. "+signal.substring(42, signal.length));
+            alert("Error : invalid format message, sending aborted to prevent Gateway corruption. "+signal.substring(42, signal.length));
         }
     }
     function sendSignalDownloadOmega(signal) {

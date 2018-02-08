@@ -496,6 +496,17 @@
         margin-bottom: 30px;
         text-align: justify;
     }
+    #user_wait{
+        text-align: center;
+        img{
+            width: 100px;
+        }
+        span{
+            display: block;
+            font-size: 20px;
+            margin-top: 15px;
+        }
+    }
     #testfinal_container{
         .bouton_grey{
             width: 140px;

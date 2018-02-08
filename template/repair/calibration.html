@@ -1,31 +1,45 @@
 <div class="section_container">
     <div class="title title_main">Calibration</div>
-    <div class="subtitle">Please calibrate all joysticks to continue.</div>
-    <div class="calibration_repair">
-        <div class="toolbox_calibration">       
-<!--            <div class="eprom_protect protected">
-                <img class="img_eprom" src="images/protected.png"/>
-                <div class="txt_eprom">EEPROM is protected</div>        
-                <div class="bt_eprom">UNLOCK EPROM</div>
-            </div>-->
+    <div class="warning_firmware"><img src="images/warning.png"> TSUI with Calibration firmware is necessary to operate this module.<br>Set the position switch to 1 before calibration.</div>
+<!--    <div class="repair_calib_section_switch">
+        <div class="title">Switch Position Control</div>
+        <div class="switch_pos_box">
+            <div class="line_test">
+                <div class="name_pos">Position 1</div>
+                <div class="bt_pos"><button>Check Position</button></div>
+                <div class="bt_pos">Test OK</div>
+                <div class="bt_pos">Resultat : position 1</div>
+            </div>
         </div>
-        
-        <div class="calibration_zone_container">
-            
+    </div>-->
+    <div class="repair_calib_section_joystick">
+        <div class="subtitle">Please calibrate all joysticks to continue.</div>
+        <div class="calibration_repair">
+            <div class="toolbox_calibration">       
+    <!--            <div class="eprom_protect protected">
+                    <img class="img_eprom" src="images/protected.png"/>
+                    <div class="txt_eprom">EEPROM is protected</div>        
+                    <div class="bt_eprom">UNLOCK EPROM</div>
+                </div>-->
+            </div>
+
+            <div class="calibration_zone_container">
+
+            </div>
+
+            <div class="calibration_test_container">
+
+            </div>
+
         </div>
-        
-        <div class="calibration_test_container">
-            
+
+        <div class="statut_calibration_verif hidden">
+            <div class="title_statut"></div>
         </div>
-        
-    </div>
-    
-    <div class="statut_calibration_verif hidden">
-        <div class="title_statut"></div>
-    </div>
-    
-    <div class="continue_to_finaltest bouton" data-link="fctfwdownloadfinal">
-        Continue
+
+        <div class="continue_to_finaltest bouton " data-link="fctfwdownloadfinal">
+            Continue
+        </div>
     </div>
     
 </div>

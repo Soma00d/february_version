@@ -36,12 +36,15 @@
         <div class="button_show">
             <div class="zone zone_0 hidden">
                 <div class="name_container">LEFT AREA</div>
+                <div class="content"></div>
             </div>
             <div class="zone zone_1 hidden">
                 <div class="name_container">BOTTOM AREA</div>
+                <div class="content"></div>
             </div>
             <div class="zone zone_2 hidden">
                 <div class="name_container">RIGHT AREA</div>
+                <div class="content"></div>
             </div>
             <div class="get_config get_conf_inge">
                 <button class="bt_get_config">Get configuration</button>
@@ -139,14 +142,14 @@
                 </div>
                 <div class="sbsh hw_signals_container bloc_container_zone hidden">
                     <div class="name_container"><span class='name_signal'>SB/SH HARDWARE SIGNALS</span></div>
-                    <div class="line_signal longEnable"><span class='name_signal '>LONG_ENABLE</span> <span class="value">1.12V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal TBLtopPan"><span class='name_signal'>TBL_TOP_PAN</span> <span class="value">2.12V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal sc1LatDR"><span class='name_signal'>SC1_LAT_DR_REQ</span> <span class="value">1.65V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal TBLtopUpDown"><span class='name_signal'>TBL_TOP_UP/DOWN_EN2</span> <span class="value">1.12V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal globGantry2"><span class='name_signal'>GLOBAL_GANTRY_EN2</span> <span class="value">1.02V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal globTable"><span class='name_signal'>GLOBAL_TABLE_EN</span> <span class="value">0.12V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal FRTLlatGantry"><span class='name_signal'>FRTL_LAT_GANTRY_EN</span> <span class="value">0.18V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
-                    <div class="line_signal latSwitch2"><span class='name_signal'>LATERAL_SWA2</span> <span class="value">2.12V</span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal longEnable"><span class='name_signal '>LONG_ENABLE</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal TBLtopPan"><span class='name_signal'>TBL_TOP_PAN</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal sc1LatDR"><span class='name_signal'>SC1_LAT_DR_REQ</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal TBLtopUpDown"><span class='name_signal'>TBL_TOP_UP/DOWN_EN2</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal globGantry2"><span class='name_signal'>GLOBAL_GANTRY_EN2</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal globTable"><span class='name_signal'>GLOBAL_TABLE_EN</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal FRTLlatGantry"><span class='name_signal'>FRTL_LAT_GANTRY_EN</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
+                    <div class="line_signal latSwitch2"><span class='name_signal'>LATERAL_SWA2</span> <span class="value"></span><span class="voyant"><img src="images/voyant_off.png"></span></div>
                 </div>
                 <div class="bt_diag_mode bloc_container_zone hidden" >
                     <div class="name_container">BUTTON DIAGNOSTIC MODE</div>
@@ -218,12 +221,16 @@
         <div class="toolbox_calibration">   
             <div class="switch_calibration">                
                 <div class="get_switch">Get Switch Position</div>
-                <div class="position_result">Switch is in position <span>1</span></div>
+                <div class="position_result">Switch is in position <span>-</span></div>
+            </div>
+            <div class="bad_calibration">                
+                <div class="get_bad"><span>Check</span> Service Button</div>
+                <div class="position_result"><img src="images/tsui1/BAD.jpg"> <span></span></div>
             </div>
             <div class="eprom_protect protected">
                 <img class="img_eprom" src="images/protected.png"/>
                 <div class="txt_eprom">EEPROM is protected</div>        
-                <div class="bt_eprom">UNLOCK EPROM</div>
+                <div class="bt_eprom">UNLOCK EEPROM</div>
             </div>
         </div>
         
@@ -240,21 +247,21 @@
     <!-- ui-dialog spybox -->
     <div id="dialog-spybox" title="Spy Box"> 
         <div class="option_line">
-            <button class="spy_stop">Pause</button>
-            <button class="spy_play">Play</button>
-            <button class="spy_clear">Clear</button>
-            <button class="add_zero_spy">Add Zero</button>
+            <button class="spy_stop"><img src="images/pause_spy.png">Pause</button>
+            <button class="spy_play"><img src="images/play_spy.png">Play</button>
+            <button class="spy_clear"><img src="images/clear_spy.png">Clear</button>
+            <button class="add_zero_spy"><img src="images/add_spy.png">Add Zero</button>
         </div>
         <div class="filter_panel">
-            <span class="text">Filter by CAN ID: </span><input class="filter_canid" type="text" value="" placeholder="000001ad" /><br><br>
-            <span class="text">Filter by CAN DATA: </span><input class="filter_candata" type="text" value="" placeholder="000000000000" /><br>
+            <span class="text">Filter by CAN ID: </span><input class="filter_canid" type="text" value="" /><br><br>
+            <span class="text">Filter by CAN DATA: </span><input class="filter_candata" type="text" value="" /><br>
             <div class="bt_filter filters_id">
-                <button class="exclude_filter_id"><img src="images/warning-sign.png"></button>
-                <button class="filter_id"><img src="images/check_green.png"></button>                
+                <button class="exclude_filter_id"><img src="images/warning-sign.png" title="Exclude from result"></button>
+                <button class="filter_id"><img src="images/check_green.png" title="Filter in result"></button>                
             </div>
             <div class="bt_filter filters_data">
-                <button class="exclude_filter_data"><img src="images/warning-sign.png"></button>
-                <button class="filter_data"><img src="images/check_green.png"></button>        
+                <button class="exclude_filter_data"><img src="images/warning-sign.png" title="Exclude from result"></button>
+                <button class="filter_data"><img src="images/check_green.png" title="Filter in result"></button>        
             </div>            
         </div>
         <div class="filters_listing">
@@ -289,7 +296,7 @@
             </div>
             <div class="sender_msg"></div>
             <div class="length_msg"></div>
-            <div><button class="sender_final">Send !</button></div>
+            <div><button class="sender_final">Send !</button><span class="result_send_confirm">Message sent successfully.</span></div>
         </div>
     </div>
 
